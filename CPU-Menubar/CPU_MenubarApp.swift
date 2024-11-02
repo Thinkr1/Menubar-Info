@@ -13,6 +13,7 @@ struct CPU_MenubarApp: App {
     @Environment(\.openWindow) private var openWindow
     @State private var cpuUsage: String = "0%" // default cpu usage value
     @State private var refreshRate: TimeInterval = 5 // default
+    @State private var iconName: String = "gauge.with.dots.needle.bottom.50percent" // default icon system name
     private var timer: Publishers.Autoconnect<Timer.TimerPublisher> { // using Combine to deliver elements to subscribers (get refresh rate)
         Timer.publish(every: refreshRate, on:.main, in: .common).autoconnect() // refresh rate
     }
@@ -37,12 +38,12 @@ struct CPU_MenubarApp: App {
             }
         } label: {
             Text(cpuUsage)
-            Image(systemName: "gauge")
+            Image(systemName: iconName)
             .labelStyle(.titleAndIcon)
         }
 
         WindowGroup("Settings", id: "settings") { // settings window
-            SettingsView(refreshRate: $refreshRate, isEditingRefreshRate: $isEditingRefreshRate)
+            SettingsView(refreshRate: $refreshRate, iconName: $iconName)
         }
     }
     private func updateCPUUsage() {
@@ -73,6 +74,8 @@ struct CPU_MenubarApp: App {
 struct SettingsView: View {
     // bind vars to app struct vars
     @Binding var refreshRate: TimeInterval
+    @Binding var iconName: String
+    var iconChoices = [("gauge.with.dots.needle.bottom.50percent", "Gauge"), ("chart.xyaxis.line", "Chart"), ("cpu", "CPU"), ("thermometer.medium", "Thermometer")]
 
     var body: some View {
         VStack {
@@ -82,6 +85,19 @@ struct SettingsView: View {
             
             Slider(value: $refreshRate, in: 1...60, step: 1) {
                 Text("Refresh Rate: \(refreshRate, specifier: "%.2f") seconds")
+            } minimumValueLabel: {
+                Text("1")
+            } maximumValueLabel: {
+                Text("60")
+            }.padding()
+            
+            Picker("Select Icon", selection: $iconName) {
+                ForEach(iconChoices, id: \.1) { choice in
+                    HStack {
+                        Image(systemName: choice.0)
+                        Text(choice.1)
+                    }.tag(choice.0)
+                }
             }.padding()
             
         }
