@@ -13,7 +13,7 @@ struct CPU_MenubarApp: App {
     @Environment(\.openWindow) private var openWindow
     @State private var cpuUsage: String = "0%" // default cpu usage value
     @State private var refreshRate: TimeInterval = 5 // default
-    @State private var iconName: String = "gauge.with.dots.needle.bottom.50percent" // default icon system name
+    @State private var iconName: String = "cpu" // default icon system name
     private var timer: Publishers.Autoconnect<Timer.TimerPublisher> { // using Combine to deliver elements to subscribers (get refresh rate)
         Timer.publish(every: refreshRate, on:.main, in: .common).autoconnect() // refresh rate
     }
@@ -31,6 +31,7 @@ struct CPU_MenubarApp: App {
                 Divider()
                 Button("Settings") {
                     openWindow(id:"settings")
+                    NSApplication.shared.activate(ignoringOtherApps: true)
                 }
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
@@ -45,12 +46,14 @@ struct CPU_MenubarApp: App {
         WindowGroup("Settings", id: "settings") { // settings window
             SettingsView(refreshRate: $refreshRate, iconName: $iconName)
         }
+        .defaultSize(width: 500, height: 300)
     }
+    
     private func updateCPUUsage() {
         let process = Process()
         let pipe = Pipe()
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-c", "ps -A -o %cpu | awk '{s+=$1} END {print s \"%\"}'"] // using ps command to get cpu %, rendering with awk
+        process.arguments = ["-c", "ps -A -o %cpu | awk '{s+=$1} END {print s \"%\"}'"] // using ps command to get cpu % -- alternative: `sudo powermetrics -s tasks -n 1 | grep ALL_TASKS | awk '{print $4"%"}'` (takes longer) -- alternative: `top -l 1 | awk '/CPU usage/ {print $3}'
         process.standardOutput = pipe
         
         do {
@@ -75,7 +78,7 @@ struct SettingsView: View {
     // bind vars to app struct vars
     @Binding var refreshRate: TimeInterval
     @Binding var iconName: String
-    var iconChoices = [("gauge.with.dots.needle.bottom.50percent", "Gauge"), ("chart.xyaxis.line", "Chart"), ("cpu", "CPU"), ("thermometer.medium", "Thermometer")]
+    var iconChoices = [("cpu", "CPU"), ("gauge.with.dots.needle.bottom.50percent", "Gauge"), ("chart.xyaxis.line", "Line Chart"), ("chart.bar.xaxis", "Bar Chart"), ("thermometer.medium", "Thermometer")]
 
     var body: some View {
         VStack {

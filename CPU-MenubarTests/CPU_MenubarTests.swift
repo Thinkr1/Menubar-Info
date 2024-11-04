@@ -2,7 +2,7 @@
 //  CPU_MenubarTests.swift
 //  CPU-MenubarTests
 //
-//  Created by [REDACTED] on 01/11/2024.
+//  Created by [REDACTED] on 03/11/2024.
 //
 
 import Testing
