@@ -32,7 +32,7 @@ struct CPU_MenubarApp: App {
                 Button("Settings") {
                     openWindow(id:"settings")
                     NSApplication.shared.activate(ignoringOtherApps: true)
-                }
+                }.keyboardShortcut(",")
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
                 }.keyboardShortcut("q")
