@@ -30,19 +30,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		DB28F14C2CD7BC0000234C63 /* CPU-MenubarTests */ = {
+		DB28F14C2CD7BC0000234C63 /* Menubar-InfoTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "CPU-MenubarTests";
+			path = "Menubar-InfoTests";
 			sourceTree = "<group>";
 		};
-		DB2A2C4B2CD55AE700AFBEB9 /* CPU-Menubar */ = {
+		DB2A2C4B2CD55AE700AFBEB9 /* Menubar-Info */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "CPU-Menubar";
+			path = "Menubar-Info";
 			sourceTree = "<group>";
 		};
-		DB2A2C672CD55AE800AFBEB9 /* CPU-MenubarUITests */ = {
+		DB2A2C672CD55AE800AFBEB9 /* Menubar-InfoUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "CPU-MenubarUITests";
+			path = "Menubar-InfoUITests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,9 +75,9 @@
 		DB2A2C402CD55AE700AFBEB9 = {
 			isa = PBXGroup;
 			children = (
-				DB2A2C4B2CD55AE700AFBEB9 /* CPU-Menubar */,
-				DB2A2C672CD55AE800AFBEB9 /* CPU-MenubarUITests */,
-				DB28F14C2CD7BC0000234C63 /* CPU-MenubarTests */,
+				DB2A2C4B2CD55AE700AFBEB9 /* Menubar-Info */,
+				DB2A2C672CD55AE800AFBEB9 /* Menubar-InfoUITests */,
+				DB28F14C2CD7BC0000234C63 /* Menubar-InfoTests */,
 				DB2A2C4A2CD55AE700AFBEB9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -109,7 +109,7 @@
 				DB28F1502CD7BC0000234C63 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				DB28F14C2CD7BC0000234C63 /* CPU-MenubarTests */,
+				DB28F14C2CD7BC0000234C63 /* Menubar-InfoTests */,
 			);
 			name = "CPU-MenubarTests";
 			packageProductDependencies = (
@@ -131,7 +131,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				DB2A2C4B2CD55AE700AFBEB9 /* CPU-Menubar */,
+				DB2A2C4B2CD55AE700AFBEB9 /* Menubar-Info */,
 			);
 			name = "CPU-Menubar";
 			packageProductDependencies = (
@@ -154,7 +154,7 @@
 				DB2A2C662CD55AE800AFBEB9 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				DB2A2C672CD55AE800AFBEB9 /* CPU-MenubarUITests */,
+				DB2A2C672CD55AE800AFBEB9 /* Menubar-InfoUITests */,
 			);
 			name = "CPU-MenubarUITests";
 			packageProductDependencies = (
@@ -426,11 +426,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "CPU-Menubar/CPU_Menubar.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Menubar-Info/Menubar_Info.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"CPU-Menubar/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Menubar-Info/Preview Content\"";
 				DEVELOPMENT_TEAM = BML64T9T2X;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -456,11 +456,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "CPU-Menubar/CPU_Menubar.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Menubar-Info/Menubar_Info.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"CPU-Menubar/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Menubar-Info/Preview Content\"";
 				DEVELOPMENT_TEAM = BML64T9T2X;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
