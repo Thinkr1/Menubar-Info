@@ -186,7 +186,7 @@
 					};
 				};
 			};
-			buildConfigurationList = DB2A2C442CD55AE700AFBEB9 /* Build configuration list for PBXProject "CPU-Menubar" */;
+			buildConfigurationList = DB2A2C442CD55AE700AFBEB9 /* Build configuration list for PBXProject "Menubar-Info" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -525,7 +525,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		DB2A2C442CD55AE700AFBEB9 /* Build configuration list for PBXProject "CPU-Menubar" */ = {
+		DB2A2C442CD55AE700AFBEB9 /* Build configuration list for PBXProject "Menubar-Info" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				DB2A2C6C2CD55AE800AFBEB9 /* Debug */,

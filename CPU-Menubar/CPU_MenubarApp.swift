@@ -15,18 +15,21 @@ struct CPU_MenubarApp: App {
     @State private var refreshRate: TimeInterval = 5 // default
     @State private var iconName: String = "cpu" // default icon system name
     @State private var cpuPctMode: Int = 0 // 0 for 800% (normal Unix), 1 for 100% (%/8)
-    private var timer: Publishers.Autoconnect<Timer.TimerPublisher> { // using Combine to deliver elements to subscribers (get refresh rate)
+    @State private var ip: String = ""
+    @State private var ipLoc: String = ""
+    private var cpuTimer: Publishers.Autoconnect<Timer.TimerPublisher> { // using Combine to deliver elements to subscribers (get refresh rate)
         Timer.publish(every: refreshRate, on:.main, in: .common).autoconnect() // refresh rate
     }
+    
     var body: some Scene {
-        MenuBarExtra() {
+        MenuBarExtra {
             VStack {
                 Text("CPU Usage: \(cpuUsage)")
                     .padding()
-                    .onReceive(timer) { _ in
+                    .onReceive(cpuTimer) { _ in
                         updateCPUUsage()
                     }
-                Button("Refresh") {
+                Button("Refresh CPU") {
                     updateCPUUsage()
                 }.keyboardShortcut("r")
                 Divider()
@@ -38,16 +41,86 @@ struct CPU_MenubarApp: App {
                     NSApplication.shared.terminate(nil)
                 }.keyboardShortcut("q")
             }
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    updateCPUUsage()
+                    updateIPAndLoc()
+                }
+            }
         } label: {
-            Text(cpuUsage)
-            Image(systemName: iconName)
-            .labelStyle(.titleAndIcon)
+            HStack {
+                Image(systemName: iconName)
+                Text(cpuUsage)
+            }
+        }
+        
+        MenuBarExtra {
+            VStack {
+                Text("IP: \(ip) (\(ipLoc))")
+                                .padding()
+                Button("Refresh IP") {
+                    updateIPAndLoc()
+                }.keyboardShortcut("r", modifiers:[.command, .shift])
+                Divider()
+                Button("Settings") {
+                    openWindow(id:"settings")
+                    NSApplication.shared.activate(ignoringOtherApps: true)
+                }.keyboardShortcut(",")
+                Button("Quit") {
+                    NSApplication.shared.terminate(nil)
+                }.keyboardShortcut("q")
+            }
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    updateCPUUsage()
+                    updateIPAndLoc()
+                }
+            }
+            
+        } label: {
+            AsyncImage(url: URL(string: "https://flagcdn.com/w20/\(ipLoc.lowercased()).png")) { image in
+                image
+                    .resizable()
+                    .scaledToFit()
+                    //.frame(width: 20, height: 20)
+            } placeholder: {
+                Text("...")
+            }
         }
 
         WindowGroup("Settings", id: "settings") { // settings window
             SettingsView(refreshRate: $refreshRate, iconName: $iconName, cpuPctMode: $cpuPctMode)
         }
+
         .defaultSize(width: 500, height: 300)
+    }
+    
+    private func updateIPAndLoc() {
+        let process = Process()
+        let pipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-c", "curl -s ip-api.com/json/$(curl -s ifconfig.me) | jq -r '.query + \" \" + .countryCode'"] //curl -s ip-api.com/json/$(curl -s ifconfig.me) | jq -r '.query + " " + .countryCode'
+        
+        process.standardOutput = pipe
+        
+        do {
+            try process.run()
+        } catch {
+            print("Failed to run command: \(error)")
+            return
+        }
+        
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        
+        if let output = String(data: data, encoding: .utf8){
+            let res = output.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: " ")
+            if res.count == 2 {
+                DispatchQueue.main.async {
+                    ip = String(res[0]) // Extract IP
+                    ipLoc = String(res[1]) // Extract country code
+                }
+            }
+        }
     }
     
     private func updateCPUUsage() {
@@ -88,7 +161,7 @@ struct SettingsView: View {
     var iconChoices = [("cpu", "CPU"), ("gauge.with.dots.needle.bottom.50percent", "Gauge"), ("chart.xyaxis.line", "Line Chart"), ("chart.bar.xaxis", "Bar Chart"), ("thermometer.medium", "Thermometer")]
     
     private var cpuPctModeBinding: Binding<Bool> {
-        Binding(get: {cpuPctMode == 1}, set: {cpuPctMode = $0 ? 1 : 0})
+        Binding(get: {self.cpuPctMode == 1}, set: {newVal in self.cpuPctMode = newVal ? 1 : 0})
     }
 
     var body: some View {
@@ -113,7 +186,7 @@ struct SettingsView: View {
             }.padding()
             
             Picker("Select Icon", selection: $iconName) {
-                ForEach(iconChoices, id: \.1) { choice in
+                ForEach(iconChoices, id: \.0) { choice in
                     HStack {
                         Image(systemName: choice.0)
                         Text(choice.1)
