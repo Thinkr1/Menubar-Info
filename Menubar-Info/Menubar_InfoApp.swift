@@ -7,16 +7,19 @@
 
 import SwiftUI
 import Combine
+import Network
 
 @main
 struct CPU_MenubarApp: App {
     @Environment(\.openWindow) private var openWindow
     @State private var cpuUsage: String = "0%" // default cpu usage value
+    @State private var cpuUsageFormatted: String = ""
     @State private var refreshRate: TimeInterval = 5 // default
     @State private var iconName: String = "cpu" // default icon system name
     @State private var cpuPctMode: Int = 0 // 0 for 800% (normal Unix), 1 for 100% (%/8)
     @State private var ip: String = ""
     @State private var ipLoc: String = ""
+    @State private var isConnected: Bool? = nil
     private var cpuTimer: Publishers.Autoconnect<Timer.TimerPublisher> { // using Combine to deliver elements to subscribers (get refresh rate)
         Timer.publish(every: refreshRate, on:.main, in: .common).autoconnect() // refresh rate
     }
@@ -29,7 +32,7 @@ struct CPU_MenubarApp: App {
                     .onReceive(cpuTimer) { _ in
                         updateCPUUsage()
                     }
-                Button("Refresh CPU") {
+                Button("Refresh") {
                     updateCPUUsage()
                 }.keyboardShortcut("r")
                 Divider()
@@ -45,6 +48,13 @@ struct CPU_MenubarApp: App {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                     updateCPUUsage()
                     updateIPAndLoc()
+                    checkInternet { isConnected in
+                        if isConnected {
+                            self.isConnected = true
+                        } else {
+                            self.isConnected = false
+                        }
+                    }
                 }
             }
         } label: {
@@ -57,9 +67,18 @@ struct CPU_MenubarApp: App {
         MenuBarExtra {
             VStack {
                 Text("IP: \(ip) (\(ipLoc))")
-                                .padding()
-                Button("Refresh IP") {
+                    .padding()
+                Text("Connected? \(isConnected==true ? "Yes" : isConnected==nil ? "..." : "No")")
+                    .padding()
+                Button("Refresh") {
                     updateIPAndLoc()
+                    checkInternet { isConnected in
+                        if isConnected {
+                            self.isConnected = true
+                        } else {
+                            self.isConnected = false
+                        }
+                    }
                 }.keyboardShortcut("r", modifiers:[.command, .shift])
                 Divider()
                 Button("Settings") {
@@ -78,13 +97,16 @@ struct CPU_MenubarApp: App {
             }
             
         } label: {
-            AsyncImage(url: URL(string: "https://flagcdn.com/w20/\(ipLoc.lowercased()).png")) { image in
-                image
-                    .resizable()
-                    .scaledToFit()
-                    //.frame(width: 20, height: 20)
-            } placeholder: {
-                Text("...")
+            if isConnected==true {
+                AsyncImage(url: URL(string: "https://flagcdn.com/w20/\(ipLoc.lowercased()).png")) { image in
+                    image
+                        .resizable()
+                        .scaledToFit()
+                } placeholder: {
+                    Text("...")
+                }
+            } else {
+                Image(systemName: "camera.metering.none")
             }
         }
 
@@ -147,9 +169,24 @@ struct CPU_MenubarApp: App {
         
         if let output = String(data: data, encoding: .utf8) {
             DispatchQueue.main.async {
-                cpuUsage = output.trimmingCharacters(in: .whitespacesAndNewlines) // render output correctly
+                cpuUsage = output.trimmingCharacters(in: .whitespacesAndNewlines) // get output correctly
             }
         }
+    }
+    
+    private func checkInternet(completion: @escaping (Bool) -> Void) {
+        let monitor = NWPathMonitor()
+        let queue = DispatchQueue.global(qos: .background) // quality of service: background, to run when system is idle (avoid using too much resources)
+        
+        monitor.pathUpdateHandler = { path in
+            if path.status == .satisfied {
+                completion(true) // return true if connection can be established
+            } else {
+                completion(false) // return false otherwide
+            }
+            monitor.cancel()
+        }
+        monitor.start(queue: queue)
     }
 }
 

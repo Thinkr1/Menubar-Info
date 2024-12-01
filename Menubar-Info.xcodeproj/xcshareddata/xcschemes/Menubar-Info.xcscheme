@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "DB2A2C482CD55AE700AFBEB9"
-               BuildableName = "CPU-Menubar.app"
-               BlueprintName = "CPU-Menubar"
+               BuildableName = "Menubar-Info.app"
+               BlueprintName = "Menubar-Info"
                ReferencedContainer = "container:Menubar-Info.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -36,8 +36,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "DB2A2C632CD55AE800AFBEB9"
-               BuildableName = "CPU-MenubarUITests.xctest"
-               BlueprintName = "CPU-MenubarUITests"
+               BuildableName = "Menubar-InfoUITests.xctest"
+               BlueprintName = "Menubar-InfoUITests"
                ReferencedContainer = "container:Menubar-Info.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -47,8 +47,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "DB28F14A2CD7BC0000234C63"
-               BuildableName = "CPU-MenubarTests.xctest"
-               BlueprintName = "CPU-MenubarTests"
+               BuildableName = "Menubar-InfoTests.xctest"
+               BlueprintName = "Menubar-InfoTests"
                ReferencedContainer = "container:Menubar-Info.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -69,8 +69,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "DB2A2C482CD55AE700AFBEB9"
-            BuildableName = "CPU-Menubar.app"
-            BlueprintName = "CPU-Menubar"
+            BuildableName = "Menubar-Info.app"
+            BlueprintName = "Menubar-Info"
             ReferencedContainer = "container:Menubar-Info.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -86,8 +86,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "DB2A2C482CD55AE700AFBEB9"
-            BuildableName = "CPU-Menubar.app"
-            BlueprintName = "CPU-Menubar"
+            BuildableName = "Menubar-Info.app"
+            BlueprintName = "Menubar-Info"
             ReferencedContainer = "container:Menubar-Info.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

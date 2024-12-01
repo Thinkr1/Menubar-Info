@@ -24,9 +24,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		DB28F14B2CD7BC0000234C63 /* CPU-MenubarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CPU-MenubarTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		DB2A2C492CD55AE700AFBEB9 /* CPU-Menubar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CPU-Menubar.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		DB2A2C642CD55AE800AFBEB9 /* CPU-MenubarUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CPU-MenubarUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DB28F14B2CD7BC0000234C63 /* Menubar-InfoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Menubar-InfoTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DB2A2C492CD55AE700AFBEB9 /* Menubar-Info.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Menubar-Info.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DB2A2C642CD55AE800AFBEB9 /* Menubar-InfoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Menubar-InfoUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -85,9 +85,9 @@
 		DB2A2C4A2CD55AE700AFBEB9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DB2A2C492CD55AE700AFBEB9 /* CPU-Menubar.app */,
-				DB2A2C642CD55AE800AFBEB9 /* CPU-MenubarUITests.xctest */,
-				DB28F14B2CD7BC0000234C63 /* CPU-MenubarTests.xctest */,
+				DB2A2C492CD55AE700AFBEB9 /* Menubar-Info.app */,
+				DB2A2C642CD55AE800AFBEB9 /* Menubar-InfoUITests.xctest */,
+				DB28F14B2CD7BC0000234C63 /* Menubar-InfoTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		DB28F14A2CD7BC0000234C63 /* CPU-MenubarTests */ = {
+		DB28F14A2CD7BC0000234C63 /* Menubar-InfoTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = DB28F1512CD7BC0000234C63 /* Build configuration list for PBXNativeTarget "CPU-MenubarTests" */;
+			buildConfigurationList = DB28F1512CD7BC0000234C63 /* Build configuration list for PBXNativeTarget "Menubar-InfoTests" */;
 			buildPhases = (
 				DB28F1472CD7BC0000234C63 /* Sources */,
 				DB28F1482CD7BC0000234C63 /* Frameworks */,
@@ -111,16 +111,16 @@
 			fileSystemSynchronizedGroups = (
 				DB28F14C2CD7BC0000234C63 /* Menubar-InfoTests */,
 			);
-			name = "CPU-MenubarTests";
+			name = "Menubar-InfoTests";
 			packageProductDependencies = (
 			);
 			productName = "CPU-MenubarTests";
-			productReference = DB28F14B2CD7BC0000234C63 /* CPU-MenubarTests.xctest */;
+			productReference = DB28F14B2CD7BC0000234C63 /* Menubar-InfoTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		DB2A2C482CD55AE700AFBEB9 /* CPU-Menubar */ = {
+		DB2A2C482CD55AE700AFBEB9 /* Menubar-Info */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = DB2A2C6E2CD55AE800AFBEB9 /* Build configuration list for PBXNativeTarget "CPU-Menubar" */;
+			buildConfigurationList = DB2A2C6E2CD55AE800AFBEB9 /* Build configuration list for PBXNativeTarget "Menubar-Info" */;
 			buildPhases = (
 				DB2A2C452CD55AE700AFBEB9 /* Sources */,
 				DB2A2C462CD55AE700AFBEB9 /* Frameworks */,
@@ -133,16 +133,16 @@
 			fileSystemSynchronizedGroups = (
 				DB2A2C4B2CD55AE700AFBEB9 /* Menubar-Info */,
 			);
-			name = "CPU-Menubar";
+			name = "Menubar-Info";
 			packageProductDependencies = (
 			);
 			productName = "CPU-Menubar";
-			productReference = DB2A2C492CD55AE700AFBEB9 /* CPU-Menubar.app */;
+			productReference = DB2A2C492CD55AE700AFBEB9 /* Menubar-Info.app */;
 			productType = "com.apple.product-type.application";
 		};
-		DB2A2C632CD55AE800AFBEB9 /* CPU-MenubarUITests */ = {
+		DB2A2C632CD55AE800AFBEB9 /* Menubar-InfoUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = DB2A2C742CD55AE800AFBEB9 /* Build configuration list for PBXNativeTarget "CPU-MenubarUITests" */;
+			buildConfigurationList = DB2A2C742CD55AE800AFBEB9 /* Build configuration list for PBXNativeTarget "Menubar-InfoUITests" */;
 			buildPhases = (
 				DB2A2C602CD55AE800AFBEB9 /* Sources */,
 				DB2A2C612CD55AE800AFBEB9 /* Frameworks */,
@@ -156,11 +156,11 @@
 			fileSystemSynchronizedGroups = (
 				DB2A2C672CD55AE800AFBEB9 /* Menubar-InfoUITests */,
 			);
-			name = "CPU-MenubarUITests";
+			name = "Menubar-InfoUITests";
 			packageProductDependencies = (
 			);
 			productName = "CPU-MenubarUITests";
-			productReference = DB2A2C642CD55AE800AFBEB9 /* CPU-MenubarUITests.xctest */;
+			productReference = DB2A2C642CD55AE800AFBEB9 /* Menubar-InfoUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -200,9 +200,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				DB2A2C482CD55AE700AFBEB9 /* CPU-Menubar */,
-				DB2A2C632CD55AE800AFBEB9 /* CPU-MenubarUITests */,
-				DB28F14A2CD7BC0000234C63 /* CPU-MenubarTests */,
+				DB2A2C482CD55AE700AFBEB9 /* Menubar-Info */,
+				DB2A2C632CD55AE800AFBEB9 /* Menubar-InfoUITests */,
+				DB28F14A2CD7BC0000234C63 /* Menubar-InfoTests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		DB28F1502CD7BC0000234C63 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = DB2A2C482CD55AE700AFBEB9 /* CPU-Menubar */;
+			target = DB2A2C482CD55AE700AFBEB9 /* Menubar-Info */;
 			targetProxy = DB28F14F2CD7BC0000234C63 /* PBXContainerItemProxy */;
 		};
 		DB2A2C662CD55AE800AFBEB9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = DB2A2C482CD55AE700AFBEB9 /* CPU-Menubar */;
+			target = DB2A2C482CD55AE700AFBEB9 /* Menubar-Info */;
 			targetProxy = DB2A2C652CD55AE800AFBEB9 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -516,7 +516,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		DB28F1512CD7BC0000234C63 /* Build configuration list for PBXNativeTarget "CPU-MenubarTests" */ = {
+		DB28F1512CD7BC0000234C63 /* Build configuration list for PBXNativeTarget "Menubar-InfoTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				DB28F1522CD7BC0000234C63 /* Debug */,
@@ -534,7 +534,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		DB2A2C6E2CD55AE800AFBEB9 /* Build configuration list for PBXNativeTarget "CPU-Menubar" */ = {
+		DB2A2C6E2CD55AE800AFBEB9 /* Build configuration list for PBXNativeTarget "Menubar-Info" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				DB2A2C6F2CD55AE800AFBEB9 /* Debug */,
@@ -543,7 +543,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		DB2A2C742CD55AE800AFBEB9 /* Build configuration list for PBXNativeTarget "CPU-MenubarUITests" */ = {
+		DB2A2C742CD55AE800AFBEB9 /* Build configuration list for PBXNativeTarget "Menubar-InfoUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				DB2A2C752CD55AE800AFBEB9 /* Debug */,
