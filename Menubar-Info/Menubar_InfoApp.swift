@@ -36,7 +36,11 @@ struct Menubar_InfoApp: App {
         Timer.publish(every: refreshRate, on:.main, in: .common).autoconnect()
     }
     
-    var BatteryIPTimer: Publishers.Autoconnect<Timer.TimerPublisher> {
+    var BatteryTimer: Publishers.Autoconnect<Timer.TimerPublisher> {
+        Timer.publish(every: 300, on:.main, in: .common).autoconnect()
+    }
+    
+    var IPTimer: Publishers.Autoconnect<Timer.TimerPublisher> {
         Timer.publish(every: 3600, on:.main, in: .common).autoconnect()
     }
     
@@ -134,7 +138,7 @@ struct Menubar_InfoApp: App {
                     NSApplication.shared.terminate(nil)
                 }.accessibilityIdentifier("QuitButton").keyboardShortcut("q")
             }
-            .onReceive(BatteryIPTimer) { _ in
+            .onReceive(IPTimer) { _ in
                 DispatchQueue.global(qos: .background).async {
                     updateIPAndLoc()
                 }
@@ -193,7 +197,7 @@ struct Menubar_InfoApp: App {
                     NSApplication.shared.terminate(nil)
                 }.accessibilityIdentifier("QuitButton").keyboardShortcut("q")
             }
-            .onReceive(BatteryIPTimer) { _ in
+            .onReceive(BatteryTimer) { _ in
                 DispatchQueue.global(qos: .background).async {
                     updateBatteryStatus()
                 }
