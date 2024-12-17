@@ -35,7 +35,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DB2A2C632CD55AE800AFBEB9"
+               BlueprintIdentifier = "DBD73A5A2CFF7F7200ED6A5C"
                BuildableName = "Menubar-InfoUITests.xctest"
                BlueprintName = "Menubar-InfoUITests"
                ReferencedContainer = "container:Menubar-Info.xcodeproj">
@@ -46,9 +46,31 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DB28F14A2CD7BC0000234C63"
+               BlueprintIdentifier = "DBD73A4D2CFF7F5E00ED6A5C"
                BuildableName = "Menubar-InfoTests.xctest"
                BlueprintName = "Menubar-InfoTests"
+               ReferencedContainer = "container:Menubar-Info.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DBD73A4D2CFF7F5E00ED6A5C"
+               BuildableName = "Menubar-InfoTests.xctest"
+               BlueprintName = "Menubar-InfoTests"
+               ReferencedContainer = "container:Menubar-Info.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DBD73A5A2CFF7F7200ED6A5C"
+               BuildableName = "Menubar-InfoUITests.xctest"
+               BlueprintName = "Menubar-InfoUITests"
                ReferencedContainer = "container:Menubar-Info.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -63,6 +85,7 @@
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
+      enableGPUValidationMode = "1"
       allowLocationSimulation = "YES">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">

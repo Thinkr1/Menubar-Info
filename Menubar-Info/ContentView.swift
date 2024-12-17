@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  CPU-Menubar
+//  Menubar-Info
 //
 //  Created by [REDACTED] on 01/11/2024.
 //

@@ -6,63 +6,20 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXContainerItemProxy section */
-		DB28F14F2CD7BC0000234C63 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = DB2A2C412CD55AE700AFBEB9 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = DB2A2C482CD55AE700AFBEB9;
-			remoteInfo = "CPU-Menubar";
-		};
-		DB2A2C652CD55AE800AFBEB9 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = DB2A2C412CD55AE700AFBEB9 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = DB2A2C482CD55AE700AFBEB9;
-			remoteInfo = "CPU-Menubar";
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
-		DB28F14B2CD7BC0000234C63 /* Menubar-InfoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Menubar-InfoTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DB2A2C492CD55AE700AFBEB9 /* Menubar-Info.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Menubar-Info.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		DB2A2C642CD55AE800AFBEB9 /* Menubar-InfoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Menubar-InfoUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		DB28F14C2CD7BC0000234C63 /* Menubar-InfoTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Menubar-InfoTests";
-			sourceTree = "<group>";
-		};
 		DB2A2C4B2CD55AE700AFBEB9 /* Menubar-Info */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Menubar-Info";
 			sourceTree = "<group>";
 		};
-		DB2A2C672CD55AE800AFBEB9 /* Menubar-InfoUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Menubar-InfoUITests";
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		DB28F1482CD7BC0000234C63 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		DB2A2C462CD55AE700AFBEB9 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		DB2A2C612CD55AE800AFBEB9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -76,8 +33,6 @@
 			isa = PBXGroup;
 			children = (
 				DB2A2C4B2CD55AE700AFBEB9 /* Menubar-Info */,
-				DB2A2C672CD55AE800AFBEB9 /* Menubar-InfoUITests */,
-				DB28F14C2CD7BC0000234C63 /* Menubar-InfoTests */,
 				DB2A2C4A2CD55AE700AFBEB9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -86,8 +41,6 @@
 			isa = PBXGroup;
 			children = (
 				DB2A2C492CD55AE700AFBEB9 /* Menubar-Info.app */,
-				DB2A2C642CD55AE800AFBEB9 /* Menubar-InfoUITests.xctest */,
-				DB28F14B2CD7BC0000234C63 /* Menubar-InfoTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,29 +48,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		DB28F14A2CD7BC0000234C63 /* Menubar-InfoTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = DB28F1512CD7BC0000234C63 /* Build configuration list for PBXNativeTarget "Menubar-InfoTests" */;
-			buildPhases = (
-				DB28F1472CD7BC0000234C63 /* Sources */,
-				DB28F1482CD7BC0000234C63 /* Frameworks */,
-				DB28F1492CD7BC0000234C63 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				DB28F1502CD7BC0000234C63 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				DB28F14C2CD7BC0000234C63 /* Menubar-InfoTests */,
-			);
-			name = "Menubar-InfoTests";
-			packageProductDependencies = (
-			);
-			productName = "CPU-MenubarTests";
-			productReference = DB28F14B2CD7BC0000234C63 /* Menubar-InfoTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 		DB2A2C482CD55AE700AFBEB9 /* Menubar-Info */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = DB2A2C6E2CD55AE800AFBEB9 /* Build configuration list for PBXNativeTarget "Menubar-Info" */;
@@ -140,29 +70,6 @@
 			productReference = DB2A2C492CD55AE700AFBEB9 /* Menubar-Info.app */;
 			productType = "com.apple.product-type.application";
 		};
-		DB2A2C632CD55AE800AFBEB9 /* Menubar-InfoUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = DB2A2C742CD55AE800AFBEB9 /* Build configuration list for PBXNativeTarget "Menubar-InfoUITests" */;
-			buildPhases = (
-				DB2A2C602CD55AE800AFBEB9 /* Sources */,
-				DB2A2C612CD55AE800AFBEB9 /* Frameworks */,
-				DB2A2C622CD55AE800AFBEB9 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				DB2A2C662CD55AE800AFBEB9 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				DB2A2C672CD55AE800AFBEB9 /* Menubar-InfoUITests */,
-			);
-			name = "Menubar-InfoUITests";
-			packageProductDependencies = (
-			);
-			productName = "CPU-MenubarUITests";
-			productReference = DB2A2C642CD55AE800AFBEB9 /* Menubar-InfoUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -173,16 +80,8 @@
 				LastSwiftUpdateCheck = 1610;
 				LastUpgradeCheck = 1610;
 				TargetAttributes = {
-					DB28F14A2CD7BC0000234C63 = {
-						CreatedOnToolsVersion = 16.1;
-						TestTargetID = DB2A2C482CD55AE700AFBEB9;
-					};
 					DB2A2C482CD55AE700AFBEB9 = {
 						CreatedOnToolsVersion = 16.1;
-					};
-					DB2A2C632CD55AE800AFBEB9 = {
-						CreatedOnToolsVersion = 16.1;
-						TestTargetID = DB2A2C482CD55AE700AFBEB9;
 					};
 				};
 			};
@@ -201,28 +100,12 @@
 			projectRoot = "";
 			targets = (
 				DB2A2C482CD55AE700AFBEB9 /* Menubar-Info */,
-				DB2A2C632CD55AE800AFBEB9 /* Menubar-InfoUITests */,
-				DB28F14A2CD7BC0000234C63 /* Menubar-InfoTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		DB28F1492CD7BC0000234C63 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		DB2A2C472CD55AE700AFBEB9 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		DB2A2C622CD55AE800AFBEB9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -232,21 +115,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		DB28F1472CD7BC0000234C63 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		DB2A2C452CD55AE700AFBEB9 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		DB2A2C602CD55AE800AFBEB9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -255,54 +124,7 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		DB28F1502CD7BC0000234C63 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = DB2A2C482CD55AE700AFBEB9 /* Menubar-Info */;
-			targetProxy = DB28F14F2CD7BC0000234C63 /* PBXContainerItemProxy */;
-		};
-		DB2A2C662CD55AE800AFBEB9 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = DB2A2C482CD55AE700AFBEB9 /* Menubar-Info */;
-			targetProxy = DB2A2C652CD55AE800AFBEB9 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		DB28F1522CD7BC0000234C63 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = BML64T9T2X;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.plmls-team.CPU-MenubarTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CPU-Menubar.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CPU-Menubar";
-			};
-			name = Debug;
-		};
-		DB28F1532CD7BC0000234C63 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = BML64T9T2X;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.plmls-team.CPU-MenubarTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CPU-Menubar.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CPU-Menubar";
-			};
-			name = Release;
-		};
 		DB2A2C6C2CD55AE800AFBEB9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -435,7 +257,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "CPU Menu Bar";
+				INFOPLIST_KEY_CFBundleDisplayName = "Menubar-Info";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -444,7 +266,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.plmls-team.CPU-Menubar";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.plmls-team.Menubar-Info";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -465,7 +287,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "CPU Menu Bar";
+				INFOPLIST_KEY_CFBundleDisplayName = "Menubar-Info";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -474,57 +296,16 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.plmls-team.CPU-Menubar";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.plmls-team.Menubar-Info";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
-		DB2A2C752CD55AE800AFBEB9 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = BML64T9T2X;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.plmls-team.CPU-MenubarUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = "CPU-Menubar";
-			};
-			name = Debug;
-		};
-		DB2A2C762CD55AE800AFBEB9 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = BML64T9T2X;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.plmls-team.CPU-MenubarUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = "CPU-Menubar";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		DB28F1512CD7BC0000234C63 /* Build configuration list for PBXNativeTarget "Menubar-InfoTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				DB28F1522CD7BC0000234C63 /* Debug */,
-				DB28F1532CD7BC0000234C63 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		DB2A2C442CD55AE700AFBEB9 /* Build configuration list for PBXProject "Menubar-Info" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -539,15 +320,6 @@
 			buildConfigurations = (
 				DB2A2C6F2CD55AE800AFBEB9 /* Debug */,
 				DB2A2C702CD55AE800AFBEB9 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		DB2A2C742CD55AE800AFBEB9 /* Build configuration list for PBXNativeTarget "Menubar-InfoUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				DB2A2C752CD55AE800AFBEB9 /* Debug */,
-				DB2A2C762CD55AE800AFBEB9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

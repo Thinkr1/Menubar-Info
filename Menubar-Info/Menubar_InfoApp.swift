@@ -1,53 +1,80 @@
 //
-//  CPU_MenubarApp.swift
-//  CPU-Menubar
+//  Menubar_InfoApp.swift
+//  Menubar-Info
 //
 //  Created by [REDACTED] on 01/11/2024.
 //
 
 import SwiftUI
+import AppKit
 import Combine
 import Network
 
 @main
-struct CPU_MenubarApp: App {
+struct Menubar_InfoApp: App {
     @Environment(\.openWindow) private var openWindow
-    @State private var cpuUsage: String = "0%" // default cpu usage value
-    @State private var cpuUsageFormatted: String = ""
-    @State private var refreshRate: TimeInterval = 5 // default
-    @State private var iconName: String = "cpu" // default icon system name
-    @State private var cpuPctMode: Int = 0 // 0 for 800% (normal Unix), 1 for 100% (%/8)
-    @State private var ip: String = ""
-    @State private var ipLoc: String = ""
-    @State private var isConnected: Bool? = nil
-    private var cpuTimer: Publishers.Autoconnect<Timer.TimerPublisher> { // using Combine to deliver elements to subscribers (get refresh rate)
-        Timer.publish(every: refreshRate, on:.main, in: .common).autoconnect() // refresh rate
+    
+    //@State var CPUUsagePerCore: [Double] = [] // per core
+    @State var CPUUsage: String = "0"
+    @State var ip: String = ""
+    @State var ipLoc: String = ""
+    @State var isConnected: Bool? = nil
+    @State var batteryPct: String = "0%"
+    @State var batteryPctBar: Double = 0
+    @State var batteryTime: String = ""
+    @State var isSettingsVisible: Bool = false
+    @State private var settingsPanel: NSPanel? = nil
+    
+    @AppStorage("refreshRate") var refreshRate: TimeInterval = 5 // default 5s
+    @AppStorage("iconName") var iconName: String = "cpu" // default icon system name
+    @AppStorage("CPUPctMode") var CPUPctMode: Int = 0 // 0 for 800% (normal Unix), 1 for 100% (%/8)
+    @AppStorage("CPUMBESelect") var CPUMBESelect: Bool = true // shown by default
+    @AppStorage("IPMBESelect") var IPMBESelect: Bool = true // shown by default
+    @AppStorage("batteryMBESelect") var batteryMBESelect: Bool = true // shown by default
+    
+    var CPUTimer: Publishers.Autoconnect<Timer.TimerPublisher> { // using Combine to deliver elements to subscribers (get refresh rate)
+        Timer.publish(every: refreshRate, on:.main, in: .common).autoconnect()
+    }
+    
+    var BatteryIPTimer: Publishers.Autoconnect<Timer.TimerPublisher> {
+        Timer.publish(every: 3600, on:.main, in: .common).autoconnect()
     }
     
     var body: some Scene {
-        MenuBarExtra {
+        CPUMenuBarExtra()
+        IPMenuBarExtra()
+        BatteryMenuBarExtra()
+    }
+    
+    @SceneBuilder
+    func CPUMenuBarExtra() -> some Scene {
+        MenuBarExtra(isInserted: $CPUMBESelect) {
             VStack {
-                Text("CPU Usage: \(cpuUsage)")
+                //Text("CPU Usage: \(CPUUsage.map {String(format: "%.2f%%", $0)}.joined(separator: ", "))")
+                Text("CPU Usage: \(CPUUsage)%")
                     .padding()
-                    .onReceive(cpuTimer) { _ in
-                        updateCPUUsage()
-                    }
+                    .onReceive(CPUTimer) { _ in
+                        DispatchQueue.global(qos: .background).async {
+                            updateCPUUsage()
+                        }
+                    }.accessibilityIdentifier("CPUUsageText")
                 Button("Refresh") {
                     updateCPUUsage()
-                }.keyboardShortcut("r")
+                }.accessibilityIdentifier("RefreshCPUButton").keyboardShortcut("r")
                 Divider()
                 Button("Settings") {
-                    openWindow(id:"settings")
-                    NSApplication.shared.activate(ignoringOtherApps: true)
-                }.keyboardShortcut(",")
+                    let settingsPanel = createSettingsPanel(refreshRate: $refreshRate, iconName: $iconName, CPUPctMode: $CPUPctMode, CPUMBESelect: $CPUMBESelect, IPMBESelect: $IPMBESelect, batteryMBESelect: $batteryMBESelect)
+                    settingsPanel.makeKeyAndOrderFront(nil)
+                }.accessibilityIdentifier("SettingsButton").keyboardShortcut(",")
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
-                }.keyboardShortcut("q")
+                }.accessibilityIdentifier("QuitButton").keyboardShortcut("q")
             }
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                     updateCPUUsage()
                     updateIPAndLoc()
+                    updateBatteryStatus()
                     checkInternet { isConnected in
                         if isConnected {
                             self.isConnected = true
@@ -58,18 +85,36 @@ struct CPU_MenubarApp: App {
                 }
             }
         } label: {
-            HStack {
+            HStack { // IN PROGRESS
+//                Canvas { context, size in
+//                    let barWidth: CGFloat = size.width/CGFloat(CPUUsage.count)
+//                    let maxHeight: CGFloat = size.height
+//
+//                    for (i, pct) in CPUUsagePerCore.enumerated() {
+//                        let height = maxHeight * CGFloat(pct/100)
+//                        let rect = CGRect(x: CGFloat(i)*barWidth, y: maxHeight - height, width: barWidth*0.8, height: height)
+//                        context.fill(Path(rect), with: .color(.white))
+//                    }
+//                }
+//                .frame(width: 40, height: 20)
+//                .accessibilityIdentifier("CPUUsageGraph")
+                Text("\(CPUUsage)%")
                 Image(systemName: iconName)
-                Text(cpuUsage)
-            }
+                //Text(CPUUsage.map {String(format: "%.2f%%", $0)}.joined(separator: ", "))
+            }.accessibilityIdentifier("CPUUsage")
         }
-        
-        MenuBarExtra {
+    }
+    
+    @SceneBuilder
+    func IPMenuBarExtra() -> some Scene {
+        MenuBarExtra(isInserted: $IPMBESelect) {
             VStack {
                 Text("IP: \(ip) (\(ipLoc))")
                     .padding()
+                    .accessibilityIdentifier("IPText")
                 Text("Connected? \(isConnected==true ? "Yes" : isConnected==nil ? "..." : "No")")
                     .padding()
+                    .accessibilityIdentifier("ConnectionStatusText")
                 Button("Refresh") {
                     updateIPAndLoc()
                     checkInternet { isConnected in
@@ -79,23 +124,28 @@ struct CPU_MenubarApp: App {
                             self.isConnected = false
                         }
                     }
-                }.keyboardShortcut("r", modifiers:[.command, .shift])
+                }.accessibilityIdentifier("IPRefreshButton").keyboardShortcut("r")
                 Divider()
                 Button("Settings") {
-                    openWindow(id:"settings")
-                    NSApplication.shared.activate(ignoringOtherApps: true)
-                }.keyboardShortcut(",")
+                    let settingsPanel = createSettingsPanel(refreshRate: $refreshRate, iconName: $iconName, CPUPctMode: $CPUPctMode, CPUMBESelect: $CPUMBESelect, IPMBESelect: $IPMBESelect, batteryMBESelect: $batteryMBESelect)
+                    settingsPanel.makeKeyAndOrderFront(nil)
+                }.accessibilityIdentifier("SettingsButton").keyboardShortcut(",")
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
-                }.keyboardShortcut("q")
+                }.accessibilityIdentifier("QuitButton").keyboardShortcut("q")
+            }
+            .onReceive(BatteryIPTimer) { _ in
+                DispatchQueue.global(qos: .background).async {
+                    updateIPAndLoc()
+                }
             }
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                     updateCPUUsage()
                     updateIPAndLoc()
+                    updateBatteryStatus()
                 }
             }
-            
         } label: {
             if isConnected==true {
                 AsyncImage(url: URL(string: "https://flagcdn.com/w20/\(ipLoc.lowercased()).png")) { image in
@@ -105,16 +155,60 @@ struct CPU_MenubarApp: App {
                 } placeholder: {
                     Text("...")
                 }
+                .accessibilityIdentifier("IPInfo")
             } else {
                 Image(systemName: "camera.metering.none")
+                    .accessibilityIdentifier("IPInfo")
             }
         }
-
-        WindowGroup("Settings", id: "settings") { // settings window
-            SettingsView(refreshRate: $refreshRate, iconName: $iconName, cpuPctMode: $cpuPctMode)
+    }
+    
+    @SceneBuilder
+    func BatteryMenuBarExtra() -> some Scene {
+        MenuBarExtra(isInserted: $batteryMBESelect) {
+            VStack {
+                HStack {
+                    Text("Battery: \(batteryPct)")
+                        .padding()
+                        .accessibilityIdentifier("batteryPctText")
+                    
+//                    ProgressView(value: Double(batteryPct.dropLast(1)) ?? 0, total: 100)
+//                        .progressViewStyle(LinearProgressViewStyle())
+//                        .padding([.leading, .trailing])
+//                        .frame(width: 100)
+                    
+                }
+                Text("Time remaining: \(batteryTime)")
+                    .padding()
+                    .accessibilityIdentifier("batteryTimeText")
+                Button("Refresh") {
+                    updateBatteryStatus()
+                }.accessibilityIdentifier("BatteryRefreshButton").keyboardShortcut("r")
+                Divider()
+                Button("Settings") {
+                    let settingsPanel = createSettingsPanel(refreshRate: $refreshRate, iconName: $iconName, CPUPctMode: $CPUPctMode, CPUMBESelect: $CPUMBESelect, IPMBESelect: $IPMBESelect, batteryMBESelect: $batteryMBESelect)
+                    settingsPanel.makeKeyAndOrderFront(nil)
+                }.accessibilityIdentifier("SettingsButton").keyboardShortcut(",")
+                Button("Quit") {
+                    NSApplication.shared.terminate(nil)
+                }.accessibilityIdentifier("QuitButton").keyboardShortcut("q")
+            }
+            .onReceive(BatteryIPTimer) { _ in
+                DispatchQueue.global(qos: .background).async {
+                    updateBatteryStatus()
+                }
+            }
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    updateCPUUsage()
+                    updateIPAndLoc()
+                    updateBatteryStatus()
+                }
+            }
+            .frame(width: 200)
+        } label: {
+            Text("\(batteryTime)")
         }
-
-        .defaultSize(width: 500, height: 300)
     }
     
     private func updateIPAndLoc() {
@@ -145,36 +239,17 @@ struct CPU_MenubarApp: App {
         }
     }
     
-    private func updateCPUUsage() {
-        let process = Process()
-        let pipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        if cpuPctMode==0 {
-            process.arguments = ["-c", "ps -A -o %cpu | awk '{s+=$1} END {print s \"%\"}'"] // using ps command to get cpu % -- alternative: `sudo powermetrics -s tasks -n 1 | grep ALL_TASKS | awk '{print $4"%"}'` (takes longer) -- alternative: `top -l 1 | awk '/CPU usage/ {print $3}'
-        } else {
-            process.arguments = ["-c", "ps -A -o %cpu | awk '{s+=$1} END {printf \"%.1f%%\\n\", s/8}'"] // same as before, just divide sum by 8
-        }
-
-        process.standardOutput = pipe
-        
-        do {
-            try process.run()
-            
-        } catch {
-            print("Failed to run command: \(error)")
-            return
-        }
-        
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        
-        if let output = String(data: data, encoding: .utf8) {
+    func updateCPUUsage() {
+        //let commandPerCore = "ps -A -o %cpu | awk 'NR>1 {core[NR % 8] += $1} END {for (i = 1; i <= 8; i++) print core[i]}'" // To complete
+        let command = CPUPctMode==0 ? "ps -A -o %cpu | awk '{s+=$1} END {print s}'" : "ps -A -o %cpu | awk '{s+=$1} END {printf \"%.1f\", s/8}'"
+        runCommand(command) { res in
             DispatchQueue.main.async {
-                cpuUsage = output.trimmingCharacters(in: .whitespacesAndNewlines) // get output correctly
+                self.CPUUsage = res.trimmingCharacters(in: .whitespacesAndNewlines)
             }
         }
     }
     
-    private func checkInternet(completion: @escaping (Bool) -> Void) {
+    func checkInternet(completion: @escaping (Bool) -> Void) {
         let monitor = NWPathMonitor()
         let queue = DispatchQueue.global(qos: .background) // quality of service: background, to run when system is idle (avoid using too much resources)
         
@@ -188,39 +263,124 @@ struct CPU_MenubarApp: App {
         }
         monitor.start(queue: queue)
     }
+    
+    func updateBatteryStatus() {
+        let batteryPctCommand = "pmset -g batt | awk '/[0-9]+%/ {gsub(/;/, \"\", $3); print $3}'"
+        let batteryTimeCommand = "pmset -g batt | awk '/[0-9]+:[0-9]+/ {print $5}'"
+        runCommand(batteryPctCommand) { res in
+            DispatchQueue.main.async {
+                self.batteryPct = res.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+        runCommand(batteryTimeCommand) { res in
+            DispatchQueue.main.async {
+                self.batteryTime = res.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+    }
+    
+    func createSettingsPanel(refreshRate: Binding<TimeInterval>, iconName: Binding<String>, CPUPctMode: Binding<Int>, CPUMBESelect: Binding<Bool>, IPMBESelect: Binding<Bool>, batteryMBESelect: Binding<Bool>) -> NSPanel {
+        if settingsPanel == nil {
+            let panel = NSPanel(
+                contentRect: NSRect(x: 0, y: 0, width: 500, height: 600),
+                styleMask: [.titled, .closable, .utilityWindow],
+                backing: .buffered,
+                defer: false
+            )
+            
+            panel.isFloatingPanel = true
+            panel.level = .floating
+            panel.hidesOnDeactivate = false
+            panel.isReleasedWhenClosed = true //make sure it can be reopened when closed
+            panel.title = "Settings"
+            panel.contentView = NSHostingView(rootView: SettingsView(refreshRate: refreshRate, iconName: iconName, CPUPctMode: CPUPctMode, CPUMBESelect: CPUMBESelect, IPMBESelect: IPMBESelect, batteryMBESelect: batteryMBESelect))
+            panel.makeKeyAndOrderFront(nil)
+            panel.center()
+            
+            settingsPanel=panel
+            return panel
+        } else {
+            settingsPanel?.makeKeyAndOrderFront(nil)
+            return settingsPanel!
+        }
+    }
+    
+    
+    
+    func runCommand(_ command: String, completion: @escaping (String) -> Void) {
+        let process = Process()
+        let pipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-c", command]
+        process.standardOutput = pipe
+
+        do {
+            try process.run()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8) {
+                completion(output)
+            }
+        } catch {
+            print("Command failed: \(error)")
+        }
+    }
 }
 
 struct SettingsView: View {
     // bind vars to app struct vars
     @Binding var refreshRate: TimeInterval
     @Binding var iconName: String
-    @Binding var cpuPctMode: Int
+    @Binding var CPUPctMode: Int
+    @Binding var CPUMBESelect: Bool
+    @Binding var IPMBESelect: Bool
+    @Binding var batteryMBESelect: Bool
     var iconChoices = [("cpu", "CPU"), ("gauge.with.dots.needle.bottom.50percent", "Gauge"), ("chart.xyaxis.line", "Line Chart"), ("chart.bar.xaxis", "Bar Chart"), ("thermometer.medium", "Thermometer")]
     
-    private var cpuPctModeBinding: Binding<Bool> {
-        Binding(get: {self.cpuPctMode == 1}, set: {newVal in self.cpuPctMode = newVal ? 1 : 0})
+    private var CPUPctModeBinding: Binding<Bool> {
+        Binding(get: {self.CPUPctMode == 1}, set: {newVal in self.CPUPctMode = newVal ? 1 : 0})
     }
 
     var body: some View {
         VStack {
-            Text("Settings")
-                .font(.headline)
-                .padding()
-            
+            HStack {
+                Text("Show in Menu Bar: ")
+                    .padding()
+                Toggle("CPU", isOn: $CPUMBESelect)
+                    .toggleStyle(.checkbox)
+                    .onChange(of: CPUMBESelect) {
+                        if !IPMBESelect && !CPUMBESelect && !batteryMBESelect {
+                            CPUMBESelect=true
+                        }
+                    }
+                Toggle("IP", isOn: $IPMBESelect)
+                    .toggleStyle(.checkbox)
+                    .onChange(of: IPMBESelect) {
+                        if !CPUMBESelect && !IPMBESelect && !batteryMBESelect {
+                            IPMBESelect=true
+                        }
+                    }
+                Toggle("Battery", isOn: $batteryMBESelect)
+                    .toggleStyle(.checkbox)
+                    .onChange(of: batteryMBESelect) {
+                        if !CPUMBESelect && !IPMBESelect && !batteryMBESelect {
+                            batteryMBESelect=true
+                        }
+                    }
+            }.accessibilityIdentifier("ShowInMenuBarToggle").padding()
             Slider(value: $refreshRate, in: 1...60, step: 1) {
-                Text("Refresh Rate: \(refreshRate, specifier: "%.2f") seconds")
+                Text("CPU Refresh Rate: \(refreshRate, specifier: "%.2f") seconds")
             } minimumValueLabel: {
                 Text("1")
             } maximumValueLabel: {
                 Text("60")
-            }.padding()
+            }.accessibilityIdentifier("RefreshRateSlider").padding()
             
             HStack {
                 Text("CPU Percentage Mode: 800%")
-                Toggle("", isOn: cpuPctModeBinding)
+                Toggle("", isOn: CPUPctModeBinding)
                     .toggleStyle(.switch)
                 Text("100%")
-            }.padding()
+            }.accessibilityIdentifier("CPUPctModeToggle").padding()
             
             Picker("Select Icon", selection: $iconName) {
                 ForEach(iconChoices, id: \.0) { choice in
@@ -229,8 +389,11 @@ struct SettingsView: View {
                         Text(choice.1)
                     }.tag(choice.0)
                 }
-            }.padding()
+            }.accessibilityIdentifier("IconPicker").padding()
             
+            Button("Close") {
+                NSApplication.shared.keyWindow?.orderOut(nil)
+            }.accessibilityIdentifier("CloseSettingsButton").padding()
         }
     }
 }
