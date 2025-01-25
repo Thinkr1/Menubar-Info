@@ -2,7 +2,7 @@
 //  Menubar_InfoApp.swift
 //  Menubar-Info
 //
-//  Created by [REDACTED] on 01/11/2024.
+//  Created by Pierre-Louis ML on 01/11/2024.
 //
 
 import SwiftUI
@@ -37,11 +37,11 @@ struct Menubar_InfoApp: App {
     }
     
     var BatteryTimer: Publishers.Autoconnect<Timer.TimerPublisher> {
-        Timer.publish(every: 300, on:.main, in: .common).autoconnect()
+        Timer.publish(every: 180, on:.main, in: .common).autoconnect()
     }
     
     var IPTimer: Publishers.Autoconnect<Timer.TimerPublisher> {
-        Timer.publish(every: 3600, on:.main, in: .common).autoconnect()
+        Timer.publish(every: 300, on:.main, in: .common).autoconnect()
     }
     
     var body: some Scene {
@@ -181,10 +181,16 @@ struct Menubar_InfoApp: App {
 //                        .padding([.leading, .trailing])
 //                        .frame(width: 100)
                     
+                
+                    Text("Time remaining: \(batteryTime)")
+                        .padding()
+                        .accessibilityIdentifier("batteryTimeText")
                 }
-                Text("Time remaining: \(batteryTime)")
-                    .padding()
-                    .accessibilityIdentifier("batteryTimeText")
+                .onReceive(BatteryTimer) { _ in
+                    DispatchQueue.global(qos: .background).async {
+                        updateBatteryStatus()
+                    }
+                }
                 Button("Refresh") {
                     updateBatteryStatus()
                 }.accessibilityIdentifier("BatteryRefreshButton").keyboardShortcut("r")
@@ -196,11 +202,6 @@ struct Menubar_InfoApp: App {
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
                 }.accessibilityIdentifier("QuitButton").keyboardShortcut("q")
-            }
-            .onReceive(BatteryTimer) { _ in
-                DispatchQueue.global(qos: .background).async {
-                    updateBatteryStatus()
-                }
             }
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {

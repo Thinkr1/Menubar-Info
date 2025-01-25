@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  Menubar-Info
 //
-//  Created by [REDACTED] on 01/11/2024.
+//  Created by Pierre-Louis ML on 01/11/2024.
 //
 
 import SwiftUI
