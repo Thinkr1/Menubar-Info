@@ -350,27 +350,51 @@ struct SettingsView: View {
             HStack {
                 Text("Show in Menu Bar: ")
                     .padding()
-                Toggle("CPU", isOn: $CPUMBESelect)
-                    .toggleStyle(.checkbox)
-                    .onChange(of: CPUMBESelect) {
-                        if !IPMBESelect && !CPUMBESelect && !batteryMBESelect {
-                            CPUMBESelect=true
+                if #available(macOS 14.0, *) {
+                    Toggle("CPU", isOn: $CPUMBESelect)
+                        .toggleStyle(.checkbox)
+                        .onChange(of: CPUMBESelect, initial: false) {
+                            if !IPMBESelect && !CPUMBESelect && !batteryMBESelect {
+                                CPUMBESelect=true
+                            }
                         }
-                    }
-                Toggle("IP", isOn: $IPMBESelect)
-                    .toggleStyle(.checkbox)
-                    .onChange(of: IPMBESelect) {
-                        if !CPUMBESelect && !IPMBESelect && !batteryMBESelect {
-                            IPMBESelect=true
+                    Toggle("IP", isOn: $IPMBESelect)
+                        .toggleStyle(.checkbox)
+                        .onChange(of: IPMBESelect, initial: false) {
+                            if !CPUMBESelect && !IPMBESelect && !batteryMBESelect {
+                                IPMBESelect=true
+                            }
                         }
-                    }
-                Toggle("Battery", isOn: $batteryMBESelect)
-                    .toggleStyle(.checkbox)
-                    .onChange(of: batteryMBESelect) {
-                        if !CPUMBESelect && !IPMBESelect && !batteryMBESelect {
-                            batteryMBESelect=true
+                    Toggle("Battery", isOn: $batteryMBESelect)
+                        .toggleStyle(.checkbox)
+                        .onChange(of: batteryMBESelect, initial: false) {
+                            if !CPUMBESelect && !IPMBESelect && !batteryMBESelect {
+                                batteryMBESelect=true
+                            }
                         }
-                    }
+                } else {
+                    Toggle("CPU", isOn: $CPUMBESelect)
+                        .toggleStyle(.checkbox)
+                        .onChange(of: CPUMBESelect) { _ in
+                            if !IPMBESelect && !CPUMBESelect && !batteryMBESelect {
+                                CPUMBESelect=true
+                            }
+                        }
+                    Toggle("IP", isOn: $IPMBESelect)
+                        .toggleStyle(.checkbox)
+                        .onChange(of: IPMBESelect) { _ in
+                            if !CPUMBESelect && !IPMBESelect && !batteryMBESelect {
+                                IPMBESelect=true
+                            }
+                        }
+                    Toggle("Battery", isOn: $batteryMBESelect)
+                        .toggleStyle(.checkbox)
+                        .onChange(of: batteryMBESelect) { _ in
+                            if !CPUMBESelect && !IPMBESelect && !batteryMBESelect {
+                                batteryMBESelect=true
+                            }
+                        }
+                }
             }.accessibilityIdentifier("ShowInMenuBarToggle").padding()
             Slider(value: $refreshRate, in: 1...60, step: 1) {
                 Text("CPU Refresh Rate: \(refreshRate, specifier: "%.2f") seconds")
