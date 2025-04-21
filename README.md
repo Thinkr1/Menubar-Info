@@ -17,7 +17,7 @@ a) You can run the following command and then open the app normally:
 sudo xattr -rd com.apple.quarantine /path/to/app/folder/Menubar-Info.app
 ```
 
-b) You can allow the app to be opened in *System Settings > Privacy & Security* by clicking "Open Anyway" for Rregex.app:
+b) You can allow the app to be opened in *System Settings > Privacy & Security* by clicking "Open Anyway" for Menubar-Info.app:
 
 <img width="461" alt="Screenshot 2025-04-21 at 4 27 22 PM" src="https://github.com/user-attachments/assets/64336344-39dc-476f-87cd-6fc209e7122f" />
 
