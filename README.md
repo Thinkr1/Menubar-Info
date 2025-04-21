@@ -6,7 +6,20 @@ A simple app, built in Swift, showing CPU percentage, country flag (based on the
 <img width="248" alt="Battery menu bar item with its popup" src="https://github.com/user-attachments/assets/8e96c97e-6a82-475f-8da5-90a91ae455f5" />
 <img width="235" alt="CPU menu bar item with its popup" src="https://github.com/user-attachments/assets/95286e98-9977-40e0-b965-18da089b72e8" />
 
-<img width="546" alt="Settings panel" src="https://github.com/user-attachments/assets/17ec57cc-d520-4fc6-b4ae-f5955cb79c42" />
+## Install
+
+1. Download the dmg from the [latest release](https://github.com/Thinkr1/Menubar-Info/releases)
+2. As I don't have a paid developer account, I cannot direcly notarize the app and you'll be presented with an alert saying it cannot be opened directly. Here are two options:
+
+a) You can run the following command and then open the app normally: 
+
+```sh
+sudo xattr -rd com.apple.quarantine /path/to/app/folder/Menubar-Info.app
+```
+
+b) You can allow the app to be opened in *System Settings > Privacy & Security* by clicking "Open Anyway" for Rregex.app:
+
+<img width="461" alt="Screenshot 2025-04-21 at 4 27 22 PM" src="https://github.com/user-attachments/assets/64336344-39dc-476f-87cd-6fc209e7122f" />
 
 ---
 
