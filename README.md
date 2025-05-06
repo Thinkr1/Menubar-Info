@@ -1,10 +1,10 @@
 <p align="center">
-  <img alt="GitHub Release" src="https://img.shields.io/github/v/release/Thinkr1/Menubar-Info">
-  <img alt="GitHub commits since latest release" src="https://img.shields.io/github/commits-since/Thinkr1/Menubar-Info/latest">
-  <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/Thinkr1/Menubar-Info">
-  <img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/Thinkr1/Menubar-Info/total">
-  <img alt="GitHub License" src="https://img.shields.io/github/license/Thinkr1/Menubar-Info">
-  <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/Thinkr1/Menubar-Info">
+  <img alt="GitHub Release" src="https://img.shields.io/github/v/release/Thinkr1/Menubar-Info?style=for-the-badge">
+  <img alt="GitHub commits since latest release" src="https://img.shields.io/github/commits-since/Thinkr1/Menubar-Info/latest?style=for-the-badge">
+  <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/Thinkr1/Menubar-Info?style=for-the-badge">
+  <img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/Thinkr1/Menubar-Info/total?style=for-the-badge">
+  <img alt="GitHub License" src="https://img.shields.io/github/license/Thinkr1/Menubar-Info?style=for-the-badge">
+  <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/Thinkr1/Menubar-Info?style=for-the-badge">
 </p>
 
 ### Menu bar info app
