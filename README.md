@@ -9,11 +9,22 @@
 
 ### Menu bar info app
 
-A simple app, built in Swift, showing CPU percentage, country flag (based on the user's public IP), and battery time remaining in the menu bar.
+A lightweight macOS menu bar utility for real-time system metrics—monitoring CPU, memory, network, ports, and battery, all at a glance.
 
-<img width="268" alt="IP menu bar item with its popup" src="https://github.com/user-attachments/assets/5ca3faa1-e611-4526-bda2-976dcfca486f" />
-<img width="248" alt="Battery menu bar item with its popup" src="https://github.com/user-attachments/assets/8e96c97e-6a82-475f-8da5-90a91ae455f5" />
-<img width="235" alt="CPU menu bar item with its popup" src="https://github.com/user-attachments/assets/95286e98-9977-40e0-b965-18da089b72e8" />
+#### CPU And Memory Monitoring
+
+<img width="576" alt="CPU" src="https://github.com/user-attachments/assets/96ace99c-c468-4109-be84-8fb4c99a8473" />
+<img width="268" alt="Memory" src="https://github.com/user-attachments/assets/f57888e9-eb82-46e1-90ab-62d22659b478" />
+
+#### Ports
+
+<img width="374" alt="Ports" src="https://github.com/user-attachments/assets/4f7da2e5-fde5-449a-a6d9-c3a216262e2c" />
+<img width="546" alt="Ports - Manager" src="https://github.com/user-attachments/assets/e2d6e749-488c-4875-9f73-50ad02e08109" />
+
+#### Network and Battery Monitoring
+
+<img width="308" alt="Network" src="https://github.com/user-attachments/assets/19a2c086-2a8b-4d26-9c50-544ac90c235f" />
+<img width="259" alt="Battery" src="https://github.com/user-attachments/assets/7b89facd-8e7a-4269-a01a-750a0bf4e3e6" />
 
 ## Install
 
@@ -29,12 +40,3 @@ sudo xattr -rd com.apple.quarantine /path/to/app/folder/Menubar-Info.app
 b) You can allow the app to be opened in *System Settings > Privacy & Security* by clicking "Open Anyway" for Menubar-Info.app:
 
 <img width="461" alt="Screenshot 2025-04-21 at 4 27 22 PM" src="https://github.com/user-attachments/assets/64336344-39dc-476f-87cd-6fc209e7122f" />
-
----
-
-<sub>CPU percentage is obtained by using the command `ps -A -o %cpu | awk '{s+=$1} END {print s}'`</sub>
-
-
-<sub>IP location is obtained by using the command `curl -s ip-api.com/json/$(curl -s ifconfig.me) | jq -r '.query + " " + .countryCode'` (and IP (v4) is obtained with `curl -s ifconfig.me`)</sub>
-
-<sub>Battery percentage is obtained with `pmset -g batt | awk '/[0-9]+%/ {gsub(/;/, "", $3); print $3}'` and time remaining is obtained with `pmset -g batt | awk '/[0-9]+:[0-9]+/ {print $5}'`</sub>
