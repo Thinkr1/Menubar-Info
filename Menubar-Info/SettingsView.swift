@@ -12,59 +12,76 @@ import Network
 import Charts
 
 struct SettingsView: View {
+    enum BatteryMenuTitleOption: String, CaseIterable, Identifiable {
+        case batteryPercentage = "Battery Percentage"
+        case timeRemaining = "Time Remaining"
+        case temperature = "Temperature"
+        case cycleCount = "Cycle Count"
+        case currentCapacity = "Current Capacity"
+        
+        var id: String { self.rawValue }
+    }
+    
     @State private var localCPURefreshRate: TimeInterval
     @State private var localMemoryRefreshRate: TimeInterval
-    @State private var localIconName: String
     @State private var localCPUPctMode: Int
     @State private var localCPUMBESelect: Bool
     @State private var localIPMBESelect: Bool
     @State private var localBatteryMBESelect: Bool
     @State private var localMemoryMBESelect: Bool
     @State private var localPortsMBESelect: Bool
+    @State private var localCPUDisplayStyle: Int
+    @State private var localMemoryDisplayMode: Int
+    @State private var localBatteryMenuTitleOption: BatteryMenuTitleOption
+
     private let CPURefreshRateBinding: Binding<TimeInterval>
     private let memoryRefreshRateBinding: Binding<TimeInterval>
-    private let iconNameBinding: Binding<String>
     private let cpupctModeBinding: Binding<Int>
     private let cpuMBESelectBinding: Binding<Bool>
     private let ipMBESelectBinding: Binding<Bool>
     private let batteryMBESelectBinding: Binding<Bool>
     private let memoryMBESelectBinding: Binding<Bool>
     private let portsMBESelectBinding: Binding<Bool>
+    private let cpuDisplayStyle: Binding<Int>
+    private let memoryDisplayModeBinding: Binding<Int>
+    private let batteryMenuTitleOptionBinding: Binding<String>
     
     init(CPURefreshRate: Binding<TimeInterval>,
          memoryRefreshRate: Binding<TimeInterval>,
-         iconName: Binding<String>,
          CPUPctMode: Binding<Int>,
          CPUMBESelect: Binding<Bool>,
          IPMBESelect: Binding<Bool>,
          batteryMBESelect: Binding<Bool>,
          memoryMBESelect: Binding<Bool>,
-         portsMBESelect: Binding<Bool>) {
+         portsMBESelect: Binding<Bool>,
+         cpuDisplayStyle: Binding<Int>,
+         memoryDisplayMode: Binding<Int>,
+         batteryMenuTitleOption: Binding<String>) {
         
         self.CPURefreshRateBinding = CPURefreshRate
         self.memoryRefreshRateBinding = memoryRefreshRate
-        self.iconNameBinding = iconName
         self.cpupctModeBinding = CPUPctMode
         self.cpuMBESelectBinding = CPUMBESelect
         self.ipMBESelectBinding = IPMBESelect
         self.batteryMBESelectBinding = batteryMBESelect
         self.memoryMBESelectBinding = memoryMBESelect
         self.portsMBESelectBinding = portsMBESelect
+        self.cpuDisplayStyle = cpuDisplayStyle
+        self.memoryDisplayModeBinding = memoryDisplayMode
+        self.batteryMenuTitleOptionBinding = batteryMenuTitleOption
         
         _localCPURefreshRate = State(initialValue: CPURefreshRate.wrappedValue)
         _localMemoryRefreshRate = State(initialValue: memoryRefreshRate.wrappedValue)
-        _localIconName = State(initialValue: iconName.wrappedValue)
         _localCPUPctMode = State(initialValue: CPUPctMode.wrappedValue)
         _localCPUMBESelect = State(initialValue: CPUMBESelect.wrappedValue)
         _localIPMBESelect = State(initialValue: IPMBESelect.wrappedValue)
         _localBatteryMBESelect = State(initialValue: batteryMBESelect.wrappedValue)
         _localMemoryMBESelect = State(initialValue: memoryMBESelect.wrappedValue)
         _localPortsMBESelect = State(initialValue: portsMBESelect.wrappedValue)
+        _localCPUDisplayStyle = State(initialValue: cpuDisplayStyle.wrappedValue)
+        _localMemoryDisplayMode = State(initialValue: memoryDisplayMode.wrappedValue)
+        _localBatteryMenuTitleOption = State(initialValue: BatteryMenuTitleOption(rawValue: batteryMenuTitleOption.wrappedValue) ?? .batteryPercentage)
     }
-    
-    var iconChoices = [("cpu", "CPU"), ("gauge.with.dots.needle.bottom.50percent", "Gauge"),
-                      ("chart.xyaxis.line", "Line Chart"), ("chart.bar.xaxis", "Bar Chart"),
-                      ("thermometer.medium", "Thermometer")]
     
     private var CPUPctModeBinding: Binding<Bool> {
         Binding(
@@ -76,7 +93,7 @@ struct SettingsView: View {
             }
         )
     }
-
+    
     var body: some View {
         VStack {
             HStack {
@@ -148,30 +165,9 @@ struct SettingsView: View {
                         }
                     ))
                     .toggleStyle(.checkbox)
-                } /*else {*/
-//                    Toggle("CPU", isOn: $CPUMBESelect)
-//                        .toggleStyle(.checkbox)
-//                        .onChange(of: CPUMBESelect) { _ in
-//                            if !IPMBESelect && !CPUMBESelect && !batteryMBESelect {
-//                                CPUMBESelect=true
-//                            }
-//                        }
-//                    Toggle("IP", isOn: $IPMBESelect)
-//                        .toggleStyle(.checkbox)
-//                        .onChange(of: IPMBESelect) { _ in
-//                            if !CPUMBESelect && !IPMBESelect && !batteryMBESelect {
-//                                IPMBESelect=true
-//                            }
-//                        }
-//                    Toggle("Battery", isOn: $batteryMBESelect)
-//                        .toggleStyle(.checkbox)
-//                        .onChange(of: batteryMBESelect) { _ in
-//                            if !CPUMBESelect && !IPMBESelect && !batteryMBESelect {
-//                                batteryMBESelect=true
-//                            }
-//                        }
-//                }
+                }
             }.accessibilityIdentifier("ShowInMenuBarToggle").padding()
+            
             Slider(value: Binding(
                 get: { self.localCPURefreshRate },
                 set: { newValue in
@@ -204,6 +200,51 @@ struct SettingsView: View {
             }
             .padding()
             
+            Picker(selection: Binding(
+                get: { self.localCPUDisplayStyle },
+                set: { newValue in
+                    self.localCPUDisplayStyle = newValue
+                    self.cpuDisplayStyle.wrappedValue = newValue
+                    UserDefaults.standard.synchronize()
+                }
+            ), label: Text("CPU Menu Item Display Mode")) {
+                Text("CPU Usage Only").tag(0)
+                Text("CPU Usage Graph Only").tag(1)
+                Text("Both").tag(2)
+            }
+            .pickerStyle(.radioGroup)
+            .horizontalRadioGroupLayout()
+            
+            Picker(selection: Binding(
+                get: { self.localMemoryDisplayMode },
+                set: { newValue in
+                    self.localMemoryDisplayMode = newValue
+                    self.memoryDisplayModeBinding.wrappedValue = newValue
+                    UserDefaults.standard.synchronize()
+                }
+            ), label: Text("Memory Display Mode")) {
+                Text("Memory Free").tag(0)
+                Text("Memory Used").tag(1)
+            }
+            .pickerStyle(.radioGroup)
+            .horizontalRadioGroupLayout()
+            .padding()
+            
+            Picker(selection: Binding(
+                get: { self.localBatteryMenuTitleOption },
+                set: { newValue in
+                    self.localBatteryMenuTitleOption = newValue
+                    self.batteryMenuTitleOptionBinding.wrappedValue = newValue.rawValue
+                    UserDefaults.standard.synchronize()
+                }
+            ), label: Text("Battery Menu Item Title")) {
+                ForEach(BatteryMenuTitleOption.allCases) { option in
+                    Text(option.rawValue).tag(option)
+                }
+            }
+            .pickerStyle(.menu)
+            .padding()
+            
             HStack {
                 Text("CPU Percentage Mode: 800%")
                 Toggle("", isOn: CPUPctModeBinding)
@@ -211,26 +252,21 @@ struct SettingsView: View {
                 Text("100%")
             }.accessibilityIdentifier("CPUPctModeToggle").padding()
             
-            Picker("Select Icon", selection: $localIconName) {
-                ForEach(iconChoices, id: \.0) { choice in
-                    HStack {
-                        Image(systemName: choice.0)
-                        Text(choice.1)
-                    }.tag(choice.0)
-                }
-            }.accessibilityIdentifier("IconPicker").padding()
-            
             Button("Close") {
                 NSApplication.shared.keyWindow?.orderOut(nil)
             }.accessibilityIdentifier("CloseSettingsButton").padding()
         }
         .onAppear {
             self.localCPURefreshRate = self.CPURefreshRateBinding.wrappedValue
-            self.localIconName = self.iconNameBinding.wrappedValue
             self.localCPUPctMode = self.cpupctModeBinding.wrappedValue
             self.localCPUMBESelect = self.cpuMBESelectBinding.wrappedValue
             self.localIPMBESelect = self.ipMBESelectBinding.wrappedValue
             self.localBatteryMBESelect = self.batteryMBESelectBinding.wrappedValue
+            self.localMemoryMBESelect = self.memoryMBESelectBinding.wrappedValue
+            self.localPortsMBESelect = self.portsMBESelectBinding.wrappedValue
+            self.localCPUDisplayStyle = self.cpuDisplayStyle.wrappedValue
+            self.localMemoryDisplayMode = self.memoryDisplayModeBinding.wrappedValue
+            self.localBatteryMenuTitleOption = BatteryMenuTitleOption(rawValue: self.batteryMenuTitleOptionBinding.wrappedValue) ?? .batteryPercentage
         }
     }
 }

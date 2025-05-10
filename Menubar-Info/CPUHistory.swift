@@ -33,6 +33,28 @@ extension CPUHistory {
         return dataPoints.filter { $0.timestamp >= sixHoursAgo }
     }
     
+    func getLast30Minutes() -> [CPUDataPoint] {
+        let now = Date()
+        let thirtyMinutesAgo = now.addingTimeInterval(-1800)
+        return dataPoints.filter { $0.timestamp >= thirtyMinutesAgo }
+    }
+    
+    func getLast30MinutesValues() -> [Double] {
+        let now = Date()
+        let thirtyMinutesAgo = now.addingTimeInterval(-1800)
+        return dataPoints
+            .filter { $0.timestamp >= thirtyMinutesAgo }
+            .map { $0.value }
+    }
+    
+    func getLastHourValues() -> [Double] {
+        let now = Date()
+        let oneHourAgo = now.addingTimeInterval(-3600)
+        return dataPoints
+            .filter { $0.timestamp >= oneHourAgo }
+            .map { $0.value }
+    }
+    
     func currentMaxValue() -> Double {
         if let pctMode = UserDefaults.standard.value(forKey: "CPUPctMode") as? Int {
             return pctMode == 0 ? 800.0 : 100.0

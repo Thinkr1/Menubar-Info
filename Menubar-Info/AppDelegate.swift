@@ -9,6 +9,7 @@ import SwiftUI
 import AppKit
 import Combine
 import Network
+import QuartzCore
 
 enum PortOpeningMethod: String, CaseIterable {
     case netcat = "Netcat (nc)"
@@ -30,18 +31,42 @@ enum PortOpeningMethod: String, CaseIterable {
     }
 }
 
+private extension AppDelegate {
+    var cpuStatusItemWidth: CGFloat {
+        switch cpuDisplayStyle {
+        case 0: return 50
+        case 1: return 45
+        case 2: return 95
+        default: return 95
+        }
+    }
+    
+    var chartWidth: CGFloat { 45 }
+    var percentageWidth: CGFloat { 50 }
+}
+
 @available(macOS 14.0, *)
 class AppDelegate: NSObject, NSApplicationDelegate {
+    enum BatteryMenuTitleOption: String, CaseIterable {
+        case batteryPercentage = "Battery Percentage"
+        case timeRemaining = "Time Remaining"
+        case temperature = "Temperature"
+        case cycleCount = "Cycle Count"
+        case currentCapacity = "Current Capacity"
+    }
+    
     @ObservedObject private var networkMonitorWrapper = NetworkMonitorWrapper()
     @AppStorage("CPURefreshRate") var CPURefreshRate: TimeInterval = 5
     @AppStorage("memoryRefreshRate") var memoryRefreshRate: TimeInterval = 5
-    @AppStorage("iconName") var iconName: String = "cpu"
-    @AppStorage("CPUPctMode") var CPUPctMode: Int = 0
+    @AppStorage("CPUPctMode") var CPUPctMode: Int = 0 // 0: 800, 1: 100
     @AppStorage("CPUMBESelect") var CPUMBESelect: Bool = true
     @AppStorage("IPMBESelect") var IPMBESelect: Bool = true
     @AppStorage("batteryMBESelect") var batteryMBESelect: Bool = true
     @AppStorage("memoryMBESelect") var memoryMBESelect: Bool = true
     @AppStorage("portsMBESelect") var portsMBESelect: Bool = true
+    @AppStorage("cpuDisplayStyle") var cpuDisplayStyle: Int = 2 // 0: only %, 1: only chart, 2: both
+    @AppStorage("memoryDisplayMode") var memoryDisplayMode: Int = 0
+    @AppStorage("batteryMenuTitleOption") var batteryMenuTitleOptionRawValue: String = BatteryMenuTitleOption.batteryPercentage.rawValue
     @Published var CPUUsage: String = "..."
     @Published var ip: String = ""
     @Published var ipLoc: String = ""
@@ -53,7 +78,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //    @Published var batteryMaxCapacity: String = "?"
 //    @Published var batteryHealth: String = "?"
 //    @Published var batteryIsCharging: Bool = false
-    @Published var batteryTemperature: String = "?"
+    @Published var batteryTemperature: Double = 0.0
     @Published var batteryCellVoltage: String = "?"
     @Published var networkSSID: String = ""
     @Published var cpuBrand: String = "Unknown"
@@ -62,6 +87,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @Published var cpuFrequency: String = "?"
     @Published var cpuCacheL1: String = "?"
     @Published var cpuCacheL2: String = "?"
+    @Published var cpuPctUser: String = "?"
+    @Published var cpuPctSys: String = "?"
+    @Published var cpuPctIdle: String = "?"
     @Published var memoryTotal: String = "?"
     @Published var memoryFreePercentage: String = "...%"
     @Published var memoryPagesFree: String = "?"
@@ -118,16 +146,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func setupCPUStatusItem() {
         cpuStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        
+            updateCPUStatusItem()
+            
         let button = cpuStatusItem?.button
-        button?.image = NSImage(systemSymbolName: iconName, accessibilityDescription: "CPU Usage")
-        button?.imagePosition = .imageLeading
-        button?.title = "\(CPUUsage)%"
+        button?.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+        button?.widthAnchor.constraint(equalToConstant: cpuStatusItemWidth).isActive = true
+//        let button = cpuStatusItem?.button
+//        let width: CGFloat
+//        switch cpuDisplayStyle {
+//        case 0: width = 50
+//        case 1: width = 45
+//        case 2: width = 95
+//        default: width = 95
+//        }
+//        button?.widthAnchor.constraint(greaterThanOrEqualToConstant: width).isActive = true
+//        button?.image = NSImage(systemSymbolName: iconName, accessibilityDescription: "CPU Usage")
+//        button?.imagePosition = .imageLeading
+//        button?.title = "\(CPUUsage)%"
         
         let menu = NSMenu()
         
         let usageItem = NSMenuItem(title: "CPU Usage: \(CPUUsage)%", action: nil, keyEquivalent: "")
         usageItem.isEnabled = false
+        
+        let userItem = NSMenuItem(title: "    User: \(cpuPctUser)%", action: nil, keyEquivalent: "")
+        userItem.isEnabled = false
+        
+        let sysItem = NSMenuItem(title: "    System: \(cpuPctSys)%", action: nil, keyEquivalent: "")
+        sysItem.isEnabled = false
+        
+        let idleItem = NSMenuItem(title: "    Idle: \(cpuPctIdle)%", action: nil, keyEquivalent: "")
+        idleItem.isEnabled = false
         
         let brandItem = NSMenuItem(title: "Brand: \(cpuBrand)", action: nil, keyEquivalent: "")
         brandItem.target=self
@@ -163,6 +212,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         quitItem.target = self
         
         menu.addItem(usageItem)
+        menu.addItem(userItem)
+        menu.addItem(sysItem)
+        menu.addItem(idleItem)
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(brandItem)
         menu.addItem(coresItem)
         menu.addItem(threadsItem)
@@ -187,6 +240,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         button?.image = NSImage(systemSymbolName: "memorychip", accessibilityDescription: "Memory Usage")
         button?.imagePosition = .imageLeading
         button?.title = "\(memoryFreePercentage)"
+        button?.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
         
         updateMemoryStatusItem()
         
@@ -263,6 +317,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         button?.image = NSImage(systemSymbolName: "network", accessibilityDescription: "Open Ports")
         button?.imagePosition = .imageLeading
         button?.title = "\(openPorts.count)"
+        button?.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
         
         let menu = NSMenu()
         
@@ -364,7 +419,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let timeItem = NSMenuItem(title: "Time remaining: \(batteryTime)", action: nil, keyEquivalent: "")
         timeItem.isEnabled = false
         
-        let temperatureItem = NSMenuItem(title: "Temperature: \(batteryTemperature)", action: nil, keyEquivalent: "")
+        let temperatureItem = NSMenuItem(title: "Temperature: \(batteryTemperature) °C", action: nil, keyEquivalent: "")
         temperatureItem.isEnabled = false
         
 //        let healthItem = NSMenuItem(title: "Health: \(batteryHealth)", action: nil, keyEquivalent: "")
@@ -474,6 +529,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let item = portsStatusItem else { return }
         
         item.button?.title = "\(openPorts.count)"
+        item.button?.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
         updatePortsMenu()
         if let menu = item.menu {
             let standardItems = menu.items.filter { item in
@@ -570,17 +626,90 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func updateBatteryStatusItem() {
-        batteryStatusItem?.button?.title = batteryTime
+        guard let button = batteryStatusItem?.button else { return }
+        
+        let selectedOption = BatteryMenuTitleOption(rawValue: batteryMenuTitleOptionRawValue) ?? .batteryPercentage
+        
+        switch selectedOption {
+        case .batteryPercentage:
+            button.title = batteryPct
+        case .timeRemaining:
+            button.title = batteryTime
+        case .temperature:
+            button.title = "\(Int(round(Double(batteryTemperature)))) °C"
+        case .cycleCount:
+            button.title = batteryCycleCount
+        case .currentCapacity:
+            button.title = "\(batteryCurrentCapacity) mAh"
+        }
+        
+        button.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
     }
     
     private func updateCPUStatusItem() {
-        cpuStatusItem?.button?.title = "\(CPUUsage)%"
-        cpuStatusItem?.button?.image = NSImage(systemSymbolName: iconName, accessibilityDescription: "CPU Usage")
+        guard let button = cpuStatusItem?.button else { return }
+        
+        button.subviews.forEach { $0.removeFromSuperview() }
+        button.constraints.forEach { button.removeConstraint($0) }
+        
+        let containerView = NSView(frame: NSRect(x: 0, y: 0, width: cpuStatusItemWidth, height: 22))
+        
+        if cpuDisplayStyle == 1 || cpuDisplayStyle == 2 {
+            let chartView = MiniChartView(frame: NSRect(
+                x: 0,
+                y: 4,
+                width: chartWidth,
+                height: 14
+            ))
+            chartView.setValues(CPUHistory.shared.getLast30Minutes().map { $0.value }, is800PercentMode: CPUPctMode == 1)
+            chartView.color = .controlAccentColor
+            containerView.addSubview(chartView)
+        }
+        
+        if cpuDisplayStyle == 0 || cpuDisplayStyle == 2 {
+            let xPosition = cpuDisplayStyle == 2 ? chartWidth + 1 : 0
+            let textField = NSTextField(frame: NSRect(
+                x: xPosition,
+                y: 3,
+                width: percentageWidth,
+                height: 16
+            ))
+            textField.stringValue = "\(CPUUsage)%"
+            textField.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+            textField.isBezeled = false
+            textField.isEditable = false
+            textField.isSelectable = false
+            textField.drawsBackground = false
+            textField.textColor = .labelColor
+            containerView.addSubview(textField)
+        }
+        
+        button.addSubview(containerView)
+        
+        button.widthAnchor.constraint(equalToConstant: cpuStatusItemWidth).isActive = true
+        
+        updateMenuItems()
     }
     
+    private var memoryUsedPercentage: String {
+        if let freePct = Double(memoryFreePercentage.trimmingCharacters(in: CharacterSet(charactersIn: "%"))) {
+            let usedPct = 100.0 - freePct
+            return String(format: "%.0f%%", usedPct)
+        }
+        return "..."
+    }
+
     private func updateMemoryStatusItem() {
-        memoryStatusItem?.button?.title = memoryFreePercentage
+        switch memoryDisplayMode {
+        case 0:
+            memoryStatusItem?.button?.title = memoryFreePercentage
+        case 1:
+            memoryStatusItem?.button?.title = memoryUsedPercentage
+        default:
+            memoryStatusItem?.button?.title = memoryFreePercentage
+        }
         memoryStatusItem?.button?.image = NSImage(systemSymbolName: "memorychip", accessibilityDescription: "Memory Usage")
+        memoryStatusItem?.button?.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
     }
     
     private func updateCPUDetails() {
@@ -637,6 +766,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.kernelVersion = result.trimmingCharacters(in: .whitespacesAndNewlines)
                     .components(separatedBy: ";").first?
                     .trimmingCharacters(in: .whitespaces) ?? "Unknown"
+            }
+        }
+        
+        let cpuPctDetailCommand = "top -l 1 -n 0 -F | grep 'CPU usage'"
+        runCommand(cpuPctDetailCommand) { [weak self] result in
+            DispatchQueue.main.async {
+                let output = result
+                let pattern = "CPU usage: (\\d+\\.\\d+)% user, (\\d+\\.\\d+)% sys, (\\d+\\.\\d+)% idle"
+                if let regex = try? NSRegularExpression(pattern: pattern, options: []),
+                   let match = regex.firstMatch(in: output, options: [], range: NSRange(location: 0, length: output.count)) {
+                    
+                    if let userRange = Range(match.range(at: 1), in: output),
+                       let sysRange = Range(match.range(at: 2), in: output),
+                       let idleRange = Range(match.range(at: 3), in: output) {
+                        
+                        self?.cpuPctUser = "\((Double(output[userRange]) ?? 0.0)*(self?.CPUPctMode == 0 ? 8 : 1))%"
+                        self?.cpuPctSys = "\((Double(output[sysRange]) ?? 0.0)*(self?.CPUPctMode == 0 ? 8 : 1))%"
+                        self?.cpuPctIdle = "\((Double(output[idleRange]) ?? 0.0)*(self?.CPUPctMode == 0 ? 8 : 1))%"
+                    }
+                }
             }
         }
         
@@ -789,6 +938,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 DispatchQueue.main.async {
                     self.CPUUsage = cleanedResult
                     CPUHistory.shared.saveCurrentCPUUsage()
+                    self.updateCPUStatusItem()
                 }
             } else {
                 print("Invalid CPU value received: \(res)")
@@ -853,7 +1003,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 if let temp = Int(temperatureString.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()) {
                     let celsius = Double(temp)/100.0
                     DispatchQueue.main.async {
-                        self.batteryTemperature = String(format: "%.2f °C", celsius)
+                        self.batteryTemperature = Double(String(format: "%.2f", celsius)) ?? 0.0
                     }
                 }
             }
@@ -911,13 +1061,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .store(in: &cancellables)
         
         NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in
-                    self?.handlePreferenceChanges()
-                    self?.setupCPUTimer()
-                    self?.setupMemoryTimer()
-                }
-                .store(in: &cancellables)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handlePreferenceChanges()
+                self?.setupCPUTimer()
+                self?.setupMemoryTimer()
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateCPUStatusItem()
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateBatteryStatusItem()
+            }
+            .store(in: &cancellables)
         
         handlePreferenceChanges()
     }
@@ -975,6 +1139,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             portsStatusItem = nil
         }
         
+        if CPUMBESelect {
+            if cpuStatusItem == nil {
+                setupCPUStatusItem()
+            } else {
+                updateCPUStatusItem()
+            }
+        }
+        
+        if let cpuButton = cpuStatusItem?.button {
+            cpuButton.constraints.forEach { cpuButton.removeConstraint($0) }
+            cpuButton.subviews.forEach { $0.removeFromSuperview() }
+            updateCPUStatusItem()
+            let width: CGFloat
+            switch cpuDisplayStyle {
+            case 0: width = 50
+            case 1: width = 45
+            case 2: width = 95
+            default: width = 95
+            }
+            cpuButton.widthAnchor.constraint(greaterThanOrEqualToConstant: width).isActive = true
+        }
+        
         updateCPUStatusItem()
         updateMemoryStatusItem()
     }
@@ -986,6 +1172,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     item.title = "CPU Usage: \(CPUUsage)%"
                 } else if item.title.starts(with: "Brand") {
                     item.title = "Brand: \(cpuBrand)"
+                } else if item.title.starts(with: "    User") {
+                    item.title = "    User: \(cpuPctUser)"
+                } else if item.title.starts(with: "    System") {
+                    item.title = "    System: \(cpuPctSys)"
+                } else if item.title.starts(with: "    Idle") {
+                    item.title = "    Idle: \(cpuPctIdle)"
                 } else if item.title.starts(with: "    Cores") {
                     item.title = "    Cores: \(cpuCores)"
                 } else if item.title.starts(with: "    Threads") {
@@ -1017,7 +1209,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             batteryMenu.item(at: 0)?.title = "Battery: \(batteryPct)"
 //            batteryMenu.item(at: 1)?.title = "Status: \(batteryIsCharging ? "Charging" : "Discharging")"
             batteryMenu.item(at: 1)?.title = "Time remaining: \(batteryTime)"
-            batteryMenu.item(at: 2)?.title = "Temperature: \(batteryTemperature)"
+            batteryMenu.item(at: 2)?.title = "Temperature: \(batteryTemperature) °C"
 //            batteryMenu.item(at: 3)?.title = "Health: \(batteryHealth)"
             batteryMenu.item(at: 3)?.title = "Cycle count: \(batteryCycleCount)"
             batteryMenu.item(at: 6)?.title = "    Design: \(batteryDesignCapacity) mAh"
@@ -1030,8 +1222,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateMemoryMenuItems() {
         if let memoryMenu = memoryStatusItem?.menu {
             for item in memoryMenu.items {
-                if item.title.starts(with: "Memory Free") {
-                    item.title = "Memory Free: \(memoryFreePercentage)"
+                if item.title.starts(with: "Memory Free") || item.title.starts(with: "Memory Used") {
+                    switch memoryDisplayMode {
+                    case 0:
+                        item.title = "Memory Free: \(memoryFreePercentage)"
+                    case 1:
+                        item.title = "Memory Used: \(memoryUsedPercentage)"
+                    default:
+                        item.title = "Memory Free: \(memoryFreePercentage)"
+                    }
                 } else if item.title.starts(with: "Total Memory") {
                     item.title = "Total Memory: \(memoryTotal)"
                 } else if item.title.starts(with: "    Free:") {
@@ -1391,7 +1590,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 600),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 700),
             styleMask: [.titled, .closable, .utilityWindow],
             backing: .buffered,
             defer: false
@@ -1406,13 +1605,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let settingsView = SettingsView(
             CPURefreshRate: $CPURefreshRate,
             memoryRefreshRate: $memoryRefreshRate,
-            iconName: $iconName,
             CPUPctMode: $CPUPctMode,
             CPUMBESelect: $CPUMBESelect,
             IPMBESelect: $IPMBESelect,
             batteryMBESelect: $batteryMBESelect,
             memoryMBESelect: $memoryMBESelect,
-            portsMBESelect: $portsMBESelect
+            portsMBESelect: $portsMBESelect,
+            cpuDisplayStyle: $cpuDisplayStyle,
+            memoryDisplayMode: $memoryDisplayMode,
+            batteryMenuTitleOption: $batteryMenuTitleOptionRawValue
         )
         
         panel.contentView = NSHostingView(rootView: settingsView)
