@@ -13,7 +13,11 @@ A lightweight macOS menu bar utility for real-time system metrics—monitoring C
 
 #### CPU And Memory Monitoring
 
-<img width="576" alt="CPU" src="https://github.com/user-attachments/assets/96ace99c-c468-4109-be84-8fb4c99a8473" />
+<<<<<<< HEAD
+<img width="576" alt="CPU" src="https://github.com/user-attachments/assets/8346086d-d62b-405f-88e5-4707a42b96b2" />
+=======
+<img width="576" alt="CPU" src="https://github.com/user-attachments/assets/0e107609-c987-465c-bc40-b18509cb6d4e" />
+>>>>>>> 23a1c21 (Update README.md)
 <img width="268" alt="Memory" src="https://github.com/user-attachments/assets/f57888e9-eb82-46e1-90ab-62d22659b478" />
 
 #### Ports

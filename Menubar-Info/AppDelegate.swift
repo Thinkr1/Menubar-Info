@@ -122,6 +122,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItems()
         setupObservers()
         initialDataLoad()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            AppUpdater.shared.checkForUpdates()
+        }
     }
     
     func applicationWillTerminate(_ notification: Notification) {
@@ -228,7 +231,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(refreshItem)
         menu.addItem(showGraphItem)
         menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(settingsItem)
+        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
+        updateItem.target = self
+        menu.addItem(updateItem)
         menu.addItem(quitItem)
         cpuStatusItem?.menu = menu
     }
@@ -305,6 +312,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(refreshItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(settingsItem)
+        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
+        updateItem.target = self
+        menu.addItem(updateItem)
         menu.addItem(quitItem)
         
         memoryStatusItem?.menu = menu
@@ -359,6 +369,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         settingsItem.target = self
         menu.addItem(settingsItem)
         
+        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
+        updateItem.target = self
+        menu.addItem(updateItem)
+        
         let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
@@ -398,6 +412,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(refreshItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(settingsItem)
+        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
+        updateItem.target = self
+        menu.addItem(updateItem)
         menu.addItem(quitItem)
         
         ipStatusItem?.menu = menu
@@ -468,6 +485,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(refreshItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(settingsItem)
+        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
+        updateItem.target = self
+        menu.addItem(updateItem)
         menu.addItem(quitItem)
         
         batteryStatusItem?.menu = menu
@@ -604,6 +624,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 portManagerItem.target = self
                 menu.addItem(portManagerItem)
             }
+            
+            menu.addItem(NSMenuItem.separator())
+            let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
+            updateItem.target = self
+            menu.addItem(updateItem)
             
             if !standardItems.contains(where: { $0.action == #selector(refreshPorts) }) {
                 let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshPorts), keyEquivalent: "r")
@@ -1083,6 +1108,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &cancellables)
         
+        Timer.scheduledTimer(withTimeInterval: 86400, repeats: true) { _ in
+            AppUpdater.shared.checkForUpdates()
+        }
+        
         handlePreferenceChanges()
     }
     
@@ -1494,6 +1523,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func refreshPorts() {
         updateOpenPorts()
+    }
+    
+    @objc private func checkForUpdates() {
+        AppUpdater.shared.checkForUpdates(force: true) {updateAvailable in
+            if !updateAvailable {
+                let alert = NSAlert()
+                alert.messageText = "You're up to date!"
+                alert.informativeText = "No updates available for Menubar-Info."
+                alert.runModal()
+            }
+        }
     }
     
     @objc private func openSettings() {
