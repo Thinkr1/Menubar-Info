@@ -11,6 +11,31 @@ import Combine
 import Network
 import Charts
 
+extension Binding where Value == String {
+    init<T: LosslessStringConvertible>(_ source: Binding<T>) {
+        self.init(
+            get: { source.wrappedValue.description },
+            set: { if let value = T($0) { source.wrappedValue = value } }
+        )
+    }
+}
+
+struct CustomMenuItem: Identifiable, Codable {
+    var id = UUID()
+    var title: String
+    var command: String
+    var refreshInterval: TimeInterval?
+    var outputFormat: String?
+    var showInMenuBar: Bool
+}
+
+struct CustomMenuButton: Identifiable, Codable {
+    var id = UUID()
+    var title: String
+    var items: [CustomMenuItem]
+    var isVisible: Bool
+}
+
 struct SettingsView: View {
     enum BatteryMenuTitleOption: String, CaseIterable, Identifiable {
         case batteryPercentage = "Battery Percentage"
@@ -33,6 +58,28 @@ struct SettingsView: View {
     @State private var localCPUDisplayStyle: Int
     @State private var localMemoryDisplayMode: Int
     @State private var localBatteryMenuTitleOption: BatteryMenuTitleOption
+    @State private var decodedCustomMenuButtons: [CustomMenuButton] = []
+    @State private var showingAddButtonSheet = false
+    @State private var newButtonTitle = ""
+    @State private var selectedButtonId: UUID?
+    @State private var showingAddItemSheet = false
+    @State private var newItemTitle = ""
+    @State private var newItemCommand = ""
+    @State private var newItemRefreshInterval: TimeInterval = 5
+    @State private var newItemOutputFormat = ""
+    @State private var newItemShowInMenuBar = false
+    
+    private var customMenuButtonsBinding: Binding<[CustomMenuButton]> {
+        Binding(
+            get: { decodedCustomMenuButtons },
+            set: {
+                decodedCustomMenuButtons = $0
+                if let encoded = try? JSONEncoder().encode($0) {
+                    customMenuButtons.wrappedValue = encoded
+                }
+            }
+        )
+    }
 
     private let CPURefreshRateBinding: Binding<TimeInterval>
     private let memoryRefreshRateBinding: Binding<TimeInterval>
@@ -45,6 +92,7 @@ struct SettingsView: View {
     private let cpuDisplayStyle: Binding<Int>
     private let memoryDisplayModeBinding: Binding<Int>
     private let batteryMenuTitleOptionBinding: Binding<String>
+    private let customMenuButtons: Binding<Data>
     
     init(CPURefreshRate: Binding<TimeInterval>,
          memoryRefreshRate: Binding<TimeInterval>,
@@ -56,7 +104,8 @@ struct SettingsView: View {
          portsMBESelect: Binding<Bool>,
          cpuDisplayStyle: Binding<Int>,
          memoryDisplayMode: Binding<Int>,
-         batteryMenuTitleOption: Binding<String>) {
+         batteryMenuTitleOption: Binding<String>,
+         customMenuButtons: Binding<Data>) {
         
         self.CPURefreshRateBinding = CPURefreshRate
         self.memoryRefreshRateBinding = memoryRefreshRate
@@ -69,6 +118,7 @@ struct SettingsView: View {
         self.cpuDisplayStyle = cpuDisplayStyle
         self.memoryDisplayModeBinding = memoryDisplayMode
         self.batteryMenuTitleOptionBinding = batteryMenuTitleOption
+        self.customMenuButtons = customMenuButtons
         
         _localCPURefreshRate = State(initialValue: CPURefreshRate.wrappedValue)
         _localMemoryRefreshRate = State(initialValue: memoryRefreshRate.wrappedValue)
@@ -81,6 +131,13 @@ struct SettingsView: View {
         _localCPUDisplayStyle = State(initialValue: cpuDisplayStyle.wrappedValue)
         _localMemoryDisplayMode = State(initialValue: memoryDisplayMode.wrappedValue)
         _localBatteryMenuTitleOption = State(initialValue: BatteryMenuTitleOption(rawValue: batteryMenuTitleOption.wrappedValue) ?? .batteryPercentage)
+        
+        let data = customMenuButtons.wrappedValue
+        if let decoded = try? JSONDecoder().decode([CustomMenuButton].self, from: data) {
+            _decodedCustomMenuButtons = State(initialValue: decoded)
+        } else {
+            _decodedCustomMenuButtons = State(initialValue: [])
+        }
     }
     
     private var CPUPctModeBinding: Binding<Bool> {
@@ -252,6 +309,8 @@ struct SettingsView: View {
                 Text("100%")
             }.accessibilityIdentifier("CPUPctModeToggle").padding()
             
+            customButtonSettings()
+            
             Button("Close") {
                 NSApplication.shared.keyWindow?.orderOut(nil)
             }.accessibilityIdentifier("CloseSettingsButton").padding()
@@ -267,6 +326,158 @@ struct SettingsView: View {
             self.localCPUDisplayStyle = self.cpuDisplayStyle.wrappedValue
             self.localMemoryDisplayMode = self.memoryDisplayModeBinding.wrappedValue
             self.localBatteryMenuTitleOption = BatteryMenuTitleOption(rawValue: self.batteryMenuTitleOptionBinding.wrappedValue) ?? .batteryPercentage
+        }
+    }
+    
+    @ViewBuilder
+    private func customButtonSettings() -> some View {
+        Section(header: Text("Custom Menu Bar Buttons").font(.headline)) {
+            List {
+                ForEach(customMenuButtonsBinding) { $button in
+                    DisclosureGroup(isExpanded: Binding(
+                        get: { selectedButtonId == button.id },
+                        set: { if $0 { selectedButtonId = button.id } else { selectedButtonId = nil } }
+                    )) {
+                        ForEach($button.items) { $item in
+                            VStack(alignment: .leading) {
+                                HStack {
+                                    Text(item.title)
+                                    Spacer()
+                                    Text(item.command)
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                    if item.showInMenuBar {
+                                        Image(systemName: "menubar.arrow.up.rectangle")
+                                    }
+                                }
+                            }
+                            .contextMenu {
+                                Button("Edit") { editItem(item) }
+                                Button("Delete") { deleteItem(item, from: button) }
+                            }
+                        }
+                        
+                        Button("Add Item") {
+                            newItemTitle = ""
+                            newItemCommand = ""
+                            newItemRefreshInterval = 5
+                            newItemOutputFormat = ""
+                            newItemShowInMenuBar = false
+                            selectedButtonId = button.id
+                            showingAddItemSheet = true
+                        }
+                    } label: {
+                        HStack {
+                            Toggle("", isOn: $button.isVisible)
+                            TextField("Button Title", text: $button.title)
+                        }
+                    }
+                    .contextMenu {
+                        Button("Delete") { deleteButton(button) }
+                    }
+                }
+            }
+            .frame(height: 200)
+            
+            Button("Add New Button") {
+                newButtonTitle = ""
+                showingAddButtonSheet = true
+            }
+        }
+        .sheet(isPresented: $showingAddButtonSheet) {
+            VStack {
+                Text("Add New Menu Bar Button").font(.headline)
+                TextField("Button Title", text: $newButtonTitle)
+                HStack {
+                    Button("Cancel") { showingAddButtonSheet = false }
+                    Button("Add") {
+                        let newButton = CustomMenuButton(
+                            title: newButtonTitle,
+                            items: [],
+                            isVisible: true
+                        )
+                        decodedCustomMenuButtons.append(newButton)
+                        saveCustomButtons()
+                        showingAddButtonSheet = false
+                    }
+                }
+            }
+            .padding()
+            .frame(width: 300)
+        }
+        .sheet(isPresented: $showingAddItemSheet) {
+            VStack {
+                Text("Add New Menu Item").font(.headline)
+                TextField("Item Title", text: $newItemTitle)
+                TextField("Command", text: $newItemCommand)
+                HStack {
+                    Text("Refresh Interval (seconds):")
+                    TextField("", value: $newItemRefreshInterval, formatter: NumberFormatter())
+                        .frame(width: 50)
+                }
+                TextField("Output Format (use {output})", text: $newItemOutputFormat)
+                Toggle("Show in Menu Bar", isOn: $newItemShowInMenuBar)
+                HStack {
+                    Button("Cancel") { showingAddItemSheet = false }
+                    Button("Add") {
+                        guard let selectedId = selectedButtonId else { return }
+                        
+                        if let buttonIndex = decodedCustomMenuButtons.firstIndex(where: { $0.id == selectedId }) {
+                            let newItem = CustomMenuItem(
+                                title: newItemTitle,
+                                command: newItemCommand,
+                                refreshInterval: newItemRefreshInterval > 0 ? newItemRefreshInterval : nil,
+                                outputFormat: newItemOutputFormat.isEmpty ? nil : newItemOutputFormat,
+                                showInMenuBar: newItemShowInMenuBar
+                            )
+                            decodedCustomMenuButtons[buttonIndex].items.append(newItem)
+                            saveCustomButtons()
+                        }
+                        showingAddItemSheet = false
+                    }
+                }
+            }
+            .padding()
+            .frame(width: 400)
+        }
+    }
+    
+    private func editItem(_ item: CustomMenuItem) {
+        for (_, button) in decodedCustomMenuButtons.enumerated() {
+            if let itemIndex = button.items.firstIndex(where: { $0.id == item.id }) {
+                let currentItem = button.items[itemIndex]
+                newItemTitle = currentItem.title
+                newItemCommand = currentItem.command
+                newItemRefreshInterval = currentItem.refreshInterval ?? 0
+                newItemOutputFormat = currentItem.outputFormat ?? ""
+                newItemShowInMenuBar = currentItem.showInMenuBar
+                selectedButtonId = button.id
+                showingAddItemSheet = true
+                return
+            }
+        }
+    }
+
+    private func deleteItem(_ item: CustomMenuItem, from button: CustomMenuButton) {
+        if let buttonIndex = decodedCustomMenuButtons.firstIndex(where: { $0.id == button.id }) {
+            if let itemIndex = decodedCustomMenuButtons[buttonIndex].items.firstIndex(where: { $0.id == item.id }) {
+                decodedCustomMenuButtons[buttonIndex].items.remove(at: itemIndex)
+                saveCustomButtons()
+            }
+        }
+    }
+
+    private func deleteButton(_ button: CustomMenuButton) {
+        if let index = decodedCustomMenuButtons.firstIndex(where: { $0.id == button.id }) {
+            decodedCustomMenuButtons.remove(at: index)
+            saveCustomButtons()
+        }
+    }
+
+    private func saveCustomButtons() {
+        if let encoded = try? JSONEncoder().encode(decodedCustomMenuButtons) {
+            customMenuButtons.wrappedValue = encoded
+            AppDelegate.shared?.setupCustomMenuButtons()
         }
     }
 }

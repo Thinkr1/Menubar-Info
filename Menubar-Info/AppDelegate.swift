@@ -67,6 +67,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @AppStorage("cpuDisplayStyle") var cpuDisplayStyle: Int = 2 // 0: only %, 1: only chart, 2: both
     @AppStorage("memoryDisplayMode") var memoryDisplayMode: Int = 0
     @AppStorage("batteryMenuTitleOption") var batteryMenuTitleOptionRawValue: String = BatteryMenuTitleOption.batteryPercentage.rawValue
+    @AppStorage("customMenuButtons") var customMenuButtonsData: Data = Data()
+    @Published var customMenuButtons: [CustomMenuButton] = []
     @Published var CPUUsage: String = "..."
     @Published var ip: String = ""
     @Published var ipLoc: String = ""
@@ -113,6 +115,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var cpuTimer: Timer?
     private var memoryTimer: Timer?
     private var cpuGraphPopover: NSPopover?
+    private var customStatusItems: [UUID: NSStatusItem] = [:]
+    private var customTimers: [UUID: Timer] = [:]
     static var shared: AppDelegate!
     let portManagerData = PortManagerData()
     
@@ -125,6 +129,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
 //            AppUpdater.shared.checkForUpdates()
 //        }
+        if let decoded = try? JSONDecoder().decode([CustomMenuButton].self, from: customMenuButtonsData) {
+            customMenuButtons = decoded
+        } else {
+            customMenuButtons = []
+        }
+        setupCustomMenuButtons()
     }
     
     func applicationWillTerminate(_ notification: Notification) {
@@ -492,6 +502,68 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         batteryStatusItem?.menu = menu
     }
+    
+    func setupCustomMenuButtons() {
+        customStatusItems.values.forEach { NSStatusBar.system.removeStatusItem($0) }
+        customStatusItems.removeAll()
+        customTimers.values.forEach { $0.invalidate() }
+        customTimers.removeAll()
+        
+        for button in customMenuButtons.filter({ $0.isVisible }) {
+            setupCustomMenuButton(button)
+        }
+    }
+
+    private func setupCustomMenuButton(_ button: CustomMenuButton) {
+        let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        customStatusItems[button.id] = statusItem
+        
+        let menu = NSMenu()
+        
+        for item in button.items.filter({ !$0.showInMenuBar }) {
+            let menuItem = NSMenuItem(title: item.title, action: #selector(executeCustomCommand(_:)), keyEquivalent: "")
+            menuItem.target = self
+            menuItem.representedObject = item
+            menu.addItem(menuItem)
+        }
+        
+        menu.addItem(NSMenuItem.separator())
+        let configureItem = NSMenuItem(title: "Configure...", action: #selector(openCustomButtonSettings), keyEquivalent: "")
+        configureItem.target = self
+        configureItem.representedObject = button.id
+        menu.addItem(configureItem)
+        
+        statusItem.menu = menu
+        
+        if let mainItem = button.items.first(where: { $0.showInMenuBar }) {
+            updateCustomButtonTitle(buttonId: button.id, item: mainItem)
+            
+            if let interval = mainItem.refreshInterval {
+                let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+                    self?.executeCustomCommand(item: mainItem, buttonId: button.id)
+                }
+                customTimers[button.id] = timer
+            }
+        } else {
+            statusItem.button?.title = button.title
+        }
+    }
+    
+    private func updateCustomButtonTitle(buttonId: UUID, item: CustomMenuItem) {
+        guard let statusItem = customStatusItems[buttonId] else { return }
+        
+        runCommand(item.command) { output in
+            DispatchQueue.main.async {
+                if let format = item.outputFormat {
+                    let formatted = format.replacingOccurrences(of: "{output}", with: output)
+                    statusItem.button?.title = formatted
+                } else {
+                    statusItem.button?.title = output
+                }
+            }
+        }
+    }
+
     
     private func updateIPStatusItem() {
         guard let button = ipStatusItem?.button else { return }
@@ -1545,6 +1617,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApplication.shared.terminate(nil)
     }
     
+    @objc private func openCustomButtonSettings() {
+        let settingsPanel = createSettingsPanel()
+        settingsPanel.makeKeyAndOrderFront(nil)
+    }
+    
+    @objc private func executeCustomCommand(_ sender: NSMenuItem) {
+        guard let item = sender.representedObject as? CustomMenuItem else { return }
+        executeCustomCommand(item: item)
+    }
+    
+    private func executeCustomCommand(item: CustomMenuItem, buttonId: UUID? = nil) {
+        runCommand(item.command) { output in
+            DispatchQueue.main.async {
+                if let buttonId = buttonId, let statusItem = self.customStatusItems[buttonId] {
+                    if let format = item.outputFormat {
+                        let formatted = format.replacingOccurrences(of: "{output}", with: output)
+                        statusItem.button?.title = formatted
+                    } else {
+                        statusItem.button?.title = output
+                    }
+                } else {
+                    let alert = NSAlert()
+                    alert.messageText = "Command Output"
+                    alert.informativeText = output
+                    alert.runModal()
+                }
+            }
+        }
+    }
+    
     private func openPort(_ port: Int, method: PortOpeningMethod) {
         let command = method.command(port)
         let process = Process()
@@ -1653,7 +1755,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             portsMBESelect: $portsMBESelect,
             cpuDisplayStyle: $cpuDisplayStyle,
             memoryDisplayMode: $memoryDisplayMode,
-            batteryMenuTitleOption: $batteryMenuTitleOptionRawValue
+            batteryMenuTitleOption: $batteryMenuTitleOptionRawValue,
+            customMenuButtons: $customMenuButtonsData
         )
         
         panel.contentView = NSHostingView(rootView: settingsView)
@@ -1669,12 +1772,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = ["-c", command]
         process.standardOutput = pipe
+        process.standardError = pipe
         
         do {
             try process.run()
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             if let output = String(data: data, encoding: .utf8) {
-                completion(output)
+                completion(output.trimmingCharacters(in: .whitespacesAndNewlines))
+            } else {
+                completion("No output")
             }
         } catch {
             print("Command failed: \(error)")
