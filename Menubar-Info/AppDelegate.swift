@@ -1372,7 +1372,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             fi
             # If MAC is "(incomplete)", set as empty string
             if [[ "$mac" == "(incomplete)" ]]; then
-            mac="Unknown"
+            mac="N/A"
             fi
             if [[ -n "$ip" ]]; then
             echo "$ip|$mac|$name"
