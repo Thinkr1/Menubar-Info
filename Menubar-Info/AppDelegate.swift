@@ -10,6 +10,7 @@ import AppKit
 import Combine
 import Network
 import QuartzCore
+//import IOKit
 
 enum PortOpeningMethod: String, CaseIterable {
     case netcat = "Netcat (nc)"
@@ -83,6 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @Published var batteryTemperature: Double = 0.0
     @Published var batteryCellVoltage: String = "?"
     @Published var networkSSID: String = ""
+    @Published var networkDeviceCount: Int = 0
     @Published var cpuBrand: String = "Unknown"
     @Published var cpuCores: String = "?"
     @Published var cpuThreads: String = "?"
@@ -105,6 +107,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @Published var osVersion: String = "?"
     @Published var kernelVersion: String = "?"
     @Published var openPorts: [String] = []
+    @Published var networkDevices: [(ip: String, mac: String/*, name: String*/)] = []
+//    @Published var smcCategories: [SensorCategory] = []
+//    @Published var smcAccessGranted: Bool = false
+//    private var smcTimer: Timer?
+//    private let smcReader = SMCReader()
     private var cancellables = Set<AnyCancellable>()
     private var settingsPanel: NSPanel?
     private var cpuStatusItem: NSStatusItem?
@@ -135,6 +142,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             customMenuButtons = []
         }
         setupCustomMenuButtons()
+//        checkSMCAccess()
+//        setupSMCMonitoring()
     }
     
     func applicationWillTerminate(_ notification: Notification) {
@@ -354,7 +363,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             for port in openPorts {
                 let portItem = NSMenuItem(title: port, action: nil, keyEquivalent: "")
-                portItem.isEnabled = false
+                portItem.isEnabled = true
                 menu.addItem(portItem)
             }
         }
@@ -398,14 +407,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let menu = NSMenu()
         
-        let ipItem = NSMenuItem(title: "IP: \(ip) (\(ipLoc))", action: nil, keyEquivalent: "")
+        let ipItem = NSMenuItem(title: "Public IP: \(ip) (\(ipLoc))", action: nil, keyEquivalent: "")
         ipItem.isEnabled = false
         
-        let networkItem = NSMenuItem(title: "Network: \(networkSSID.isEmpty ? "Unknown" : networkSSID)", action: nil, keyEquivalent: "")
+        let networkItem = NSMenuItem(title: "Network SSID: \(networkSSID.isEmpty ? "Unknown" : networkSSID)", action: nil, keyEquivalent: "")
         networkItem.isEnabled = false
         
-        let statusItem = NSMenuItem(title: "Connected? \(networkMonitorWrapper.isReachable ? "Yes" : "...")", action: nil, keyEquivalent: "")
+        let statusItem = NSMenuItem(title: "Connected? \(networkMonitorWrapper.isReachable ? "Yes" : "No")", action: nil, keyEquivalent: "")
         statusItem.isEnabled = false
+        
+        let devicesHeader = NSMenuItem(title: "Connected Devices: \(networkDeviceCount)", action: nil, keyEquivalent: "")
+        devicesHeader.isEnabled = false
         
         let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshIP), keyEquivalent: "r")
         refreshItem.target = self
@@ -419,12 +431,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(ipItem)
         menu.addItem(networkItem)
         menu.addItem(statusItem)
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(devicesHeader)
+        for device in networkDevices {
+            let deviceItem = NSMenuItem(title: "    \(device.ip) (\(device.mac))", action: nil, keyEquivalent: "")
+            deviceItem.isEnabled = false
+            menu.addItem(deviceItem)
+        }
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(refreshItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(settingsItem)
-//        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
-//        updateItem.target = self
-//        menu.addItem(updateItem)
         menu.addItem(quitItem)
         
         ipStatusItem?.menu = menu
@@ -504,43 +521,70 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func setupCustomMenuButtons() {
-        customStatusItems.values.forEach { NSStatusBar.system.removeStatusItem($0) }
+        for(_, item) in customStatusItems {
+            NSStatusBar.system.removeStatusItem(item)
+        }
         customStatusItems.removeAll()
         customTimers.values.forEach { $0.invalidate() }
         customTimers.removeAll()
-        
-        for button in customMenuButtons.filter({ $0.isVisible }) {
-            setupCustomMenuButton(button)
+        let decoded: [CustomMenuButton]
+        if let d = try? JSONDecoder().decode([CustomMenuButton].self, from: customMenuButtonsData) {
+            decoded = d
+        } else {
+            decoded = []
+        }
+        customMenuButtons = decoded
+
+        for button in decoded {
+            if button.isVisible, button.items.contains(where: {$0.showInMenuBar}) {
+                setupCustomMenuButton(button)
+            }
         }
     }
+    
+//    private func checkSMCAccess() {
+//        smcAccessGranted = smcReader.isConnected
+//        if !smcAccessGranted {
+//            showSMCAccessDeniedAlert()
+//        }
+//    }
+//    
+//    private func setupSMCMonitoring() {
+//        fetchSMCData()
+//        smcTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+//            self?.fetchSMCData()
+//        }
+//    }
 
     private func setupCustomMenuButton(_ button: CustomMenuButton) {
         let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         customStatusItems[button.id] = statusItem
-        
+        guard let menuBarItem = button.items.first(where: { $0.showInMenuBar }) else { return }
+        statusItem.button?.title = menuBarItem.title
+
         let menu = NSMenu()
-        
-        for item in button.items.filter({ !$0.showInMenuBar }) {
+        for item in button.items where item.showInMenuBar {
             let menuItem = NSMenuItem(title: item.title, action: #selector(executeCustomCommand(_:)), keyEquivalent: "")
             menuItem.target = self
-            menuItem.representedObject = item
+            menuItem.representedObject = (item, button.id)
             menu.addItem(menuItem)
         }
-        
         menu.addItem(NSMenuItem.separator())
-        let configureItem = NSMenuItem(title: "Configure...", action: #selector(openCustomButtonSettings), keyEquivalent: "")
-        configureItem.target = self
-        configureItem.representedObject = button.id
-        menu.addItem(configureItem)
-        
+        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
+
         statusItem.menu = menu
         
         if let mainItem = button.items.first(where: { $0.showInMenuBar }) {
             updateCustomButtonTitle(buttonId: button.id, item: mainItem)
             
             if let interval = mainItem.refreshInterval {
-                let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-                    self?.executeCustomCommand(item: mainItem, buttonId: button.id)
+                let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+                    self.executeCustomCommand(item: mainItem, buttonId: button.id)
                 }
                 customTimers[button.id] = timer
             }
@@ -549,16 +593,182 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+//    private func fetchSMCData() {
+//        guard smcAccessGranted else {
+//            updateSMCMenuWithError()
+//            return
+//        }
+//
+//        DispatchQueue.global(qos: .userInitiated).async {
+//            var newCategories: [SensorCategory] = []
+//            
+//            guard self.smcReader.readKey("TC0P") != nil else {
+//                DispatchQueue.main.async {
+//                    self.smcAccessGranted = false
+//                    self.updateSMCMenuWithError()
+//                }
+//                return
+//            }
+//            
+//            let categories: [(name: String, keys: [(key: String, description: String, unit: String?)])] = [
+//                 ("Battery", [
+//                     ("BNum", "Battery Count", nil),
+//                     ("BSIn", "Battery Info", nil),
+//                     ("BATP", "Battery Power", nil)
+//                 ]),
+//                 ("Current", [
+//                     ("IPBR", "Charger BMON", "A"),
+//                     ("ibuck5", "PMU2 ibuck5", "A"),
+//                     ("ibuck8", "PMU2 ibuck8", "A"),
+//                     ("ildo4", "PMU2 ildo4", "A"),
+//                     ("ibuck0", "PMU ibuck0", "A"),
+//                     ("ibuck1", "PMU ibuck1", "A"),
+//                     ("ibuck2", "PMU ibuck2", "A"),
+//                     ("ibuck4", "PMU ibuck4", "A"),
+//                     ("ibuck7", "PMU ibuck7", "A"),
+//                     ("ibuck9", "PMU ibuck9", "A"),
+//                     ("ibuck11", "PMU ibuck11", "A"),
+//                     ("ildo2", "PMU ildo2", "A"),
+//                     ("ildo7", "PMU ildo7", "A"),
+//                     ("ildo8", "PMU ildo8", "A"),
+//                     ("ildo9", "PMU ildo9", "A")
+//                 ]),
+//                 ("Fans", [
+//                     ("FNum", "Fan Count", nil)
+//                 ]),
+//                 ("Power", [
+//                     ("PPBR", "Battery", "W"),
+//                     ("PHPC", "Heatpipe", "W"),
+//                     ("PSTR", "System Total", "W")
+//                 ]),
+//                 ("Temperature", [
+//                     ("Ts1P", "Actuator", "°C"),
+//                     ("TW0P", "Airport", "°C"),
+//                     ("TB1T", "Battery 1", "°C"),
+//                     ("TB2T", "Battery 2", "°C"),
+//                     ("Te05", "CPU Efficiency Core 1", "°C"),
+//                     ("Tp01", "CPU Performance Core 1", "°C"),
+//                     ("Tp05", "CPU Performance Core 2", "°C"),
+//                     ("Tp09", "CPU Performance Core 3", "°C"),
+//                     ("Tp0D", "CPU Performance Core 4", "°C"),
+//                     ("Tp0b", "CPU Performance Core 6", "°C"),
+//                     ("Tp0f", "CPU Performance Core 7", "°C"),
+//                     ("Tp0j", "CPU Performance Core 8", "°C"),
+//                     ("TH0x", "Drive 0 OOBv3 Max", "°C"),
+//                     ("Tg0f", "GPU 1", "°C"),
+//                     ("TG0H", "GPU Heatsink 1", "°C"),
+//                     ("Th0H", "Heatpipe 1", "°C"),
+//                     ("Ts0S", "Memory Proximity", "°C"),
+//                     ("temp", "NAND CH0 temp", "°C"),
+//                     ("tcal", "PMU2 tcal", "°C"),
+//                     ("tdev1", "PMU2 tdev1", "°C"),
+//                     ("tdev2", "PMU2 tdev2", "°C"),
+//                     ("tdev3", "PMU2 tdev3", "°C"),
+//                     ("tdev4", "PMU2 tdev4", "°C"),
+//                     ("tdev5", "PMU2 tdev5", "°C"),
+//                     ("tdev6", "PMU2 tdev6", "°C"),
+//                     ("tdev7", "PMU2 tdev7", "°C"),
+//                     ("tdev8", "PMU2 tdev8", "°C"),
+//                     ("tdie1", "PMU2 tdie1", "°C"),
+//                     ("tdie2", "PMU2 tdie2", "°C"),
+//                     ("tdie3", "PMU2 tdie3", "°C"),
+//                     ("tdie4", "PMU2 tdie4", "°C"),
+//                     ("tdie5", "PMU2 tdie5", "°C"),
+//                     ("tdie6", "PMU2 tdie6", "°C"),
+//                     ("tdie7", "PMU2 tdie7", "°C"),
+//                     ("tdie8", "PMU2 tdie8", "°C"),
+//                     ("Ts0P", "Palm Rest", "°C"),
+//                     ("Tp0C", "Power Supply 1 Alt", "°C"),
+//                     ("battery", "gas gauge battery", "°C")
+//                 ]),
+//                 ("Voltage", [
+//                     ("VP0R", "12V Rail", "V"),
+//                     ("VD0R", "DC In", "V"),
+//                     ("vbuck5", "PMU2 vbuck5", "V"),
+//                     ("vbuck6", "PMU2 vbuck6", "V"),
+//                     ("vbuck8", "PMU2 vbuck8", "V"),
+//                     ("vbuck10", "PMU2 vbuck10", "V"),
+//                     ("vbuck12", "PMU2 vbuck12", "V"),
+//                     ("vbuck14", "PMU2 vbuck14", "V"),
+//                     ("vldo4", "PMU2 vldo4", "V"),
+//                     ("vbuck0", "PMU vbuck0", "V"),
+//                     ("vbuck1", "PMU vbuck1", "V"),
+//                     ("vbuck2", "PMU vbuck2", "V"),
+//                     ("vbuck3", "PMU vbuck3", "V"),
+//                     ("vbuck4", "PMU vbuck4", "V"),
+//                     ("vbuck7", "PMU vbuck7", "V"),
+//                     ("vbuck9", "PMU vbuck9", "V"),
+//                     ("vbuck11", "PMU vbuck11", "V"),
+//                     ("vbuck13", "PMU vbuck13", "V"),
+//                     ("vldo2", "PMU vldo2", "V"),
+//                     ("vldo7", "PMU vldo7", "V"),
+//                     ("vldo8", "PMU vldo8", "V"),
+//                     ("vldo9", "PMU vldo9", "V")
+//                 ])
+//            ]
+//            
+//            for category in categories {
+//                var sensors: [SensorData] = []
+//                
+//                for keyInfo in category.keys {
+//                    if let (value, type) = self.smcReader.readKey(keyInfo.key) {
+//                        let formattedValue: String
+//                        if let unit = keyInfo.unit {
+//                            formattedValue = String(format: "%.1f %@", value, unit)
+//                        } else {
+//                            formattedValue = String(format: "%.0f", value)
+//                        }
+//                        
+//                        let sensor = SensorData(
+//                            description: keyInfo.description,
+//                            key: keyInfo.key,
+//                            value: formattedValue,
+//                            type: SensorType(rawValue: type)
+//                        )
+//                        sensors.append(sensor)
+//                    }
+//                }
+//                
+//                if !sensors.isEmpty {
+//                    newCategories.append(SensorCategory(
+//                        name: category.name,
+//                        sensors: sensors
+//                    ))
+//                }
+//            }
+//            
+//            DispatchQueue.main.async {
+//                if newCategories.isEmpty {
+//                    self.smcAccessGranted = false
+//                    self.updateSMCMenuWithError()
+//                } else {
+//                    self.smcCategories = newCategories
+//                    self.updateSMCMenuItems()
+//                }
+//            }
+//        }
+//    }
+    
     private func updateCustomButtonTitle(buttonId: UUID, item: CustomMenuItem) {
         guard let statusItem = customStatusItems[buttonId] else { return }
         
+        if statusItem.button?.title.isEmpty ?? true {
+            statusItem.button?.title = item.title
+        }
+        
         runCommand(item.command) { output in
-            DispatchQueue.main.async {
-                if let format = item.outputFormat {
-                    let formatted = format.replacingOccurrences(of: "{output}", with: output)
-                    statusItem.button?.title = formatted
+            DispatchQueue.main.async { [weak statusItem] in
+                guard let statusItem = statusItem else { return }
+                let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmedOutput.isEmpty {
+                    if let format = item.outputFormat {
+                        let formatted = format.replacingOccurrences(of: "{output}", with: trimmedOutput)
+                        statusItem.button?.title = formatted
+                    } else {
+                        statusItem.button?.title = trimmedOutput
+                    }
                 } else {
-                    statusItem.button?.title = output
+                    statusItem.button?.title = item.title
                 }
             }
         }
@@ -644,9 +854,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 noPortsItem.isEnabled = false
                 menu.addItem(noPortsItem)
             } else {
-                for port in openPorts {
-                    let portItem = NSMenuItem(title: port, action: nil, keyEquivalent: "")
-                    portItem.isEnabled = false
+                for portInfo in openPorts {
+                    let portData = extractPortData(from: portInfo)
+                    let portItem = NSMenuItem(title: portInfo, action: nil, keyEquivalent: "")
+                    
+                    let submenu = NSMenu()
+                    
+                    if let pid = portData.pid {
+                        let killItem = NSMenuItem(title: "Kill Process", action: #selector(killPortProcess(_:)), keyEquivalent: "")
+                        killItem.target = self
+                        killItem.representedObject = pid
+                        killItem.image = NSImage(systemSymbolName: "xmark.circle", accessibilityDescription: "Kill")
+                        submenu.addItem(killItem)
+                    }
+                    
+                    if let port = portData.port {
+                        let copyItem = NSMenuItem(title: "Copy URL", action: #selector(copyPortURL(_:)), keyEquivalent: "")
+                        copyItem.target = self
+                        copyItem.representedObject = port
+                        copyItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "Copy")
+                        submenu.addItem(copyItem)
+                        
+                        if isLocalhostPort(portInfo) {
+                            let openItem = NSMenuItem(title: "Open in Browser", action: #selector(openPortInBrowser(_:)), keyEquivalent: "")
+                            openItem.target = self
+                            openItem.representedObject = port
+                            openItem.image = NSImage(systemSymbolName: "safari", accessibilityDescription: "Open")
+                            submenu.addItem(openItem)
+                        }
+                    }
+                    
+                    portItem.submenu = submenu
                     menu.addItem(portItem)
                 }
             }
@@ -808,6 +1046,126 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         memoryStatusItem?.button?.image = NSImage(systemSymbolName: "memorychip", accessibilityDescription: "Memory Usage")
         memoryStatusItem?.button?.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
     }
+    
+//    private func updateSMCMenuItems() {
+//        guard let mainMenu = NSApp.mainMenu else { return }
+//        
+//        var smcMenuItem: NSMenuItem!
+//        
+//        if let existingItem = mainMenu.item(withTitle: "Sensors") {
+//            smcMenuItem = existingItem
+//        } else {
+//            smcMenuItem = NSMenuItem(title: "Sensors", action: nil, keyEquivalent: "")
+//            mainMenu.insertItem(smcMenuItem, at: mainMenu.items.count - 1)
+//        }
+//        
+//        let submenu = NSMenu(title: "System Sensors")
+//        
+//        for category in smcCategories {
+//            let categoryItem = NSMenuItem(title: category.name, action: nil, keyEquivalent: "")
+//            let categoryMenu = NSMenu(title: category.name)
+//            
+//            for sensor in category.sensors {
+//                let item = NSMenuItem(
+//                    title: "\(sensor.description): \(sensor.value)",
+//                    action: nil,
+//                    keyEquivalent: ""
+//                )
+//                item.isEnabled = false
+//                
+//                if sensor.value.contains("°C"), let temp = Double(sensor.value.replacingOccurrences(of: " °C", with: "")) {
+//                    if temp > 80 {
+//                        item.attributedTitle = NSAttributedString(
+//                            string: item.title,
+//                            attributes: [.foregroundColor: NSColor.systemRed]
+//                        )
+//                    } else if temp > 70 {
+//                        item.attributedTitle = NSAttributedString(
+//                            string: item.title,
+//                            attributes: [.foregroundColor: NSColor.systemOrange]
+//                        )
+//                    }
+//                }
+//                
+//                categoryMenu.addItem(item)
+//            }
+//            
+//            categoryItem.submenu = categoryMenu
+//            submenu.addItem(categoryItem)
+//        }
+//        
+//        submenu.addItem(NSMenuItem.separator())
+//        
+//        let refreshItem = NSMenuItem(
+//            title: "Refresh",
+//            action: #selector(refreshSMCData),
+//            keyEquivalent: "r"
+//        )
+//        refreshItem.target = self
+//        submenu.addItem(refreshItem)
+//        
+//        let helpItem = NSMenuItem(
+//            title: "Troubleshooting...",
+//            action: #selector(showSMCAccessHelp),
+//            keyEquivalent: ""
+//        )
+//        helpItem.target = self
+//        submenu.addItem(helpItem)
+//        
+//        smcMenuItem.submenu = submenu
+//    }
+//    
+//    private func updateSMCMenuWithError() {
+//        guard let mainMenu = NSApp.mainMenu else { return }
+//        
+//        var smcMenuItem: NSMenuItem!
+//        
+//        if let existingItem = mainMenu.item(withTitle: "Sensors") {
+//            smcMenuItem = existingItem
+//        } else {
+//            smcMenuItem = NSMenuItem(title: "Sensors", action: nil, keyEquivalent: "")
+//            mainMenu.insertItem(smcMenuItem, at: mainMenu.items.count - 1)
+//        }
+//        
+//        let submenu = NSMenu(title: "System Sensors")
+//        
+//        let errorItem = NSMenuItem(
+//            title: "Sensor Access Denied",
+//            action: nil,
+//            keyEquivalent: ""
+//        )
+//        errorItem.isEnabled = false
+//        submenu.addItem(errorItem)
+//        
+//        let helpItem = NSMenuItem(
+//            title: "How to Fix...",
+//            action: #selector(showSMCAccessHelp),
+//            keyEquivalent: ""
+//        )
+//        helpItem.target = self
+//        submenu.addItem(helpItem)
+//        
+//        smcMenuItem.submenu = submenu
+//    }
+//
+//    @objc private func showSMCAccessHelp() {
+//        let alert = NSAlert()
+//        alert.messageText = "Sensor Access Required"
+//        alert.addButton(withTitle: "Open System Preferences")
+//        alert.addButton(withTitle: "OK")
+//        
+//        let response = alert.runModal()
+//        if response == .alertFirstButtonReturn {
+//            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy")!)
+//        }
+//    }
+//
+//    private func showSMCAccessDeniedAlert() {
+//        let alert = NSAlert()
+//        alert.messageText = "Sensor Access Not Available"
+//        alert.informativeText = "This app can't access system sensors. Some features will be limited."
+//        alert.runModal()
+//    }
     
     private func updateCPUDetails() {
         let brandCommand = "sysctl -n machdep.cpu.brand_string"
@@ -998,6 +1356,52 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.updateMenuItems()
             }
         }
+        
+        let arpCommand = """
+        arp -a | while read -r line; do
+            ip=$(echo "$line" | awk -F '[()]' '{print $2}')
+            mac=$(echo "$line" | awk '{for(i=1;i<=NF;i++) if ($i ~ /([0-9a-fA-F]{1,2}:){5}[0-9a-fA-F]{1,2}/) print $i}')
+            name=$(echo "$line" | awk '{print $1}')
+            # If name is "?", try reverse DNS, else use as is
+            if [[ "$name" == "?" ]]; then
+            revname=$(dig +short -x $ip 2>/dev/null | sed 's/\\.$//')
+            if [[ -z "$revname" ]]; then
+                revname="Unknown"
+            fi
+            name="$revname"
+            fi
+            # If MAC is "(incomplete)", set as empty string
+            if [[ "$mac" == "(incomplete)" ]]; then
+            mac="Unknown"
+            fi
+            if [[ -n "$ip" ]]; then
+            echo "$ip|$mac|$name"
+            fi
+        done
+        """
+        
+        runCommand(arpCommand) { [weak self] res in
+            DispatchQueue.main.async {
+                let devices = res.components(separatedBy: .newlines)
+                    .filter { !$0.isEmpty }
+                    .compactMap { line -> (ip: String, mac: String, name: String)? in
+                        let components = line.components(separatedBy: "|")
+                        if components.count >= 3 {
+                            let name = components[2].trimmingCharacters(in: .whitespaces)
+                            return (
+                                ip: components[0],
+                                mac: components[1],
+                                name: name == "" ? "Unknown" : name
+                            )
+                        }
+                        return nil
+                    }
+                self?.networkDevices = devices.map { ($0.ip, $0.mac) }
+                self?.networkDeviceCount = devices.count
+                self?.updateIPMenuItem(with: devices)
+                self?.updateMenuItems()
+            }
+        }
     }
     
     private func updateIPAndLoc() {
@@ -1180,6 +1584,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &cancellables)
         
+        Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
+            self?.updateIPAndLoc()
+            self?.updateNetworkDetails()
+        }
+        
 //        Timer.scheduledTimer(withTimeInterval: 86400, repeats: true) { _ in
 //            AppUpdater.shared.checkForUpdates()
 //        }
@@ -1295,28 +1704,67 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         
-        if let ipMenu = ipStatusItem?.menu, ipMenu.items.count > 2 {
-            ipMenu.item(at: 0)?.title = "Public IP: \(ip) (\(ipLoc))"
-            ipMenu.item(at: 1)?.title = "Network SSID: \(networkSSID.isEmpty ? "Unknown" : networkSSID)"
-            ipMenu.item(at: 2)?.title = "Connected? \(networkMonitorWrapper.isReachable ? "Yes" : "...")"
-        }
-        
-        if let batteryMenu = batteryStatusItem?.menu, batteryMenu.items.count > 1 {
-            batteryMenu.item(at: 0)?.title = "Battery: \(batteryPct)"
-            batteryMenu.item(at: 1)?.title = "Time remaining: \(batteryTime)"
+        if let ipMenu = ipStatusItem?.menu {
+            for item in ipMenu.items {
+                if item.title.starts(with: "Public IP") {
+                    item.title = "Public IP: \(ip) (\(ipLoc))"
+                } else if item.title.starts(with: "Network SSID") {
+                    item.title = "Network SSID: \(networkSSID.isEmpty ? "Unknown" : networkSSID)"
+                } else if item.title.starts(with: "Connected?") {
+                    item.title = "Connected? \(networkMonitorWrapper.isReachable ? "Yes" : "No")"
+                } else if item.title.starts(with: "Connected Devices") {
+                    item.title = "Connected Devices: \(networkDeviceCount)"
+                }
+            }
+            
+            ipMenu.items.removeAll { $0.title.hasPrefix("    ") }
+            
+            if let devicesHeaderIndex = ipMenu.items.firstIndex(where: { $0.title.starts(with: "Connected Devices") }) {
+                for device in networkDevices {
+                    let deviceItem = NSMenuItem(title: "    \(device.ip) (\(device.mac))", action: nil, keyEquivalent: "")
+                    deviceItem.isEnabled = false
+                    ipMenu.insertItem(deviceItem, at: devicesHeaderIndex + 1)
+                }
+                
+                if devicesHeaderIndex + networkDevices.count + 1 < ipMenu.items.count &&
+                   !ipMenu.items[devicesHeaderIndex + networkDevices.count + 1].isSeparatorItem {
+                    ipMenu.insertItem(NSMenuItem.separator(), at: devicesHeaderIndex + networkDevices.count + 1)
+                }
+            }
         }
         
         if let batteryMenu = batteryStatusItem?.menu, batteryMenu.items.count > 5 {
             batteryMenu.item(at: 0)?.title = "Battery: \(batteryPct)"
-//            batteryMenu.item(at: 1)?.title = "Status: \(batteryIsCharging ? "Charging" : "Discharging")"
             batteryMenu.item(at: 1)?.title = "Time remaining: \(batteryTime)"
             batteryMenu.item(at: 2)?.title = "Temperature: \(batteryTemperature) °C"
-//            batteryMenu.item(at: 3)?.title = "Health: \(batteryHealth)"
-            batteryMenu.item(at: 3)?.title = "Cycle count: \(batteryCycleCount)"
             batteryMenu.item(at: 6)?.title = "    Design: \(batteryDesignCapacity) mAh"
-//            batteryMenu.item(at: 7)?.title = "    Maximum: \(batteryMaxCapacity) mAh"
-            batteryMenu.item(at: 7)?.title = "    Current: \(batteryCurrentCapacity) mAh"
-            batteryMenu.item(at: 9)?.title = "Cell voltage: \(batteryCellVoltage)"
+        }
+    }
+    
+    private func updateIPMenuItem(with devices: [(ip: String, mac: String, name: String)]) {
+        guard let menu = ipStatusItem?.menu else { return }
+        
+        let nonDeviceItems = menu.items.filter { item in
+            !item.title.hasPrefix("    ")
+        }
+        
+        menu.removeAllItems()
+        
+        for item in nonDeviceItems {
+            if item.title.contains("Connected Devices") {
+                item.title = "Connected Devices: \(devices.count)"
+            }
+            menu.addItem(item)
+            
+            if item.title.contains("Connected Devices") {
+                for device in devices {
+                    let deviceName = device.name.hasSuffix(".") ? "Unknown" : device.name
+                    let displayName = deviceName == "Unknown" ? "" : " (\(deviceName))"
+                    let deviceItem = NSMenuItem(title: "    \(device.ip) - \(device.mac)\(displayName)", action: nil, keyEquivalent: "")
+                    deviceItem.isEnabled = false
+                    menu.addItem(deviceItem)
+                }
+            }
         }
     }
     
@@ -1392,6 +1840,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     copyItem.representedObject = port
                     copyItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "Copy")
                     submenu.addItem(copyItem)
+                    
                     if isLocalhostPort(portInfo) {
                         let openItem = NSMenuItem(title: "Open in Browser", action: #selector(openPortInBrowser(_:)), keyEquivalent: "")
                         openItem.target = self
@@ -1431,6 +1880,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(quitItem)
     }
 
+    private struct PortData {
+        var pid: Int?
+        var port: Int?
+    }
+    
     private func extractPortData(from portInfo: String) -> PortData {
         var result = PortData()
         
@@ -1597,6 +2051,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateOpenPorts()
     }
     
+//    @objc private func refreshSMCData() {
+//        fetchSMCData()
+//    }
+    
 //    @objc private func checkForUpdates() {
 //        AppUpdater.shared.checkForUpdates(force: true) {updateAvailable in
 //            if !updateAvailable {
@@ -1628,16 +2086,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func executeCustomCommand(item: CustomMenuItem, buttonId: UUID? = nil) {
-        runCommand(item.command) { output in
-            DispatchQueue.main.async {
-                if let buttonId = buttonId, let statusItem = self.customStatusItems[buttonId] {
-                    if let format = item.outputFormat {
-                        let formatted = format.replacingOccurrences(of: "{output}", with: output)
-                        statusItem.button?.title = formatted
+        if let buttonId = buttonId, let statusItem = customStatusItems[buttonId] {
+            let currentTitle = statusItem.button?.title ?? item.title
+            
+            runCommand(item.command) { output in
+                DispatchQueue.main.async {
+                    let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !trimmedOutput.isEmpty {
+                        if let format = item.outputFormat {
+                            let formatted = format.replacingOccurrences(of: "{output}", with: trimmedOutput)
+                            statusItem.button?.title = formatted
+                        } else {
+                            statusItem.button?.title = trimmedOutput
+                        }
                     } else {
-                        statusItem.button?.title = output
+                        statusItem.button?.title = currentTitle
                     }
-                } else {
+                }
+            }
+        } else {
+            runCommand(item.command) { output in
+                DispatchQueue.main.async {
                     let alert = NSAlert()
                     alert.messageText = "Command Output"
                     alert.informativeText = output

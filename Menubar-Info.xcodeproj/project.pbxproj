@@ -10,9 +10,22 @@
 		DB2A2C492CD55AE700AFBEB9 /* Menubar-Info.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Menubar-Info.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DBD828952DEC6C1C00F862AB /* Exceptions for "Menubar-Info" folder in "Menubar-Info" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DB2A2C482CD55AE700AFBEB9 /* Menubar-Info */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DB2A2C4B2CD55AE700AFBEB9 /* Menubar-Info */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DBD828952DEC6C1C00F862AB /* Exceptions for "Menubar-Info" folder in "Menubar-Info" target */,
+			);
 			path = "Menubar-Info";
 			sourceTree = "<group>";
 		};
@@ -258,12 +271,15 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Menubar-Info/Preview Content\"";
+				DEVELOPMENT_TEAM = BML64T9T2X;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Menubar-Info/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Menubar-Info";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Menubar-Info needs access to system management controls to monitor hardware sensors.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -289,12 +305,15 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Menubar-Info/Preview Content\"";
+				DEVELOPMENT_TEAM = BML64T9T2X;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Menubar-Info/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Menubar-Info";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Menubar-Info needs access to system management controls to monitor hardware sensors.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

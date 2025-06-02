@@ -8,5 +8,7 @@
 	<true/>
     <key>com.apple.security.downloads.read-write</key>
     <true/>
+    <key>com.apple.security.device.smc</key>
+	<true/>
 </dict>
 </plist>
