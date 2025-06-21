@@ -33,6 +33,7 @@ enum PortOpeningMethod: String, CaseIterable {
 }
 
 private extension AppDelegate {
+    var progressViewHorizontalPadding: CGFloat { 12 }
     var cpuStatusItemWidth: CGFloat {
         switch cpuDisplayStyle {
         case 0: return 50
@@ -189,16 +190,72 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         
         let usageItem = NSMenuItem(title: "CPU Usage: \(CPUUsage)%", action: nil, keyEquivalent: "")
-        usageItem.isEnabled = false
+        usageItem.isEnabled = true
         
         let userItem = NSMenuItem(title: "    User: \(cpuPctUser)%", action: nil, keyEquivalent: "")
-        userItem.isEnabled = false
+        userItem.isEnabled = true
         
         let sysItem = NSMenuItem(title: "    System: \(cpuPctSys)%", action: nil, keyEquivalent: "")
-        sysItem.isEnabled = false
+        sysItem.isEnabled = true
         
         let idleItem = NSMenuItem(title: "    Idle: \(cpuPctIdle)%", action: nil, keyEquivalent: "")
-        idleItem.isEnabled = false
+        idleItem.isEnabled = true
+        
+        let cpuProgressItem = NSMenuItem()
+        let cpuProgressView = createProgressContainerView()
+
+        let cpuProgressBar = NSView()
+        cpuProgressBar.translatesAutoresizingMaskIntoConstraints = false
+        cpuProgressBar.wantsLayer = true
+        cpuProgressBar.layer?.cornerRadius = 4
+        cpuProgressBar.layer?.masksToBounds = true
+        cpuProgressBar.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+        cpuProgressView.addSubview(cpuProgressBar)
+
+        NSLayoutConstraint.activate([
+            cpuProgressBar.leadingAnchor.constraint(equalTo: cpuProgressView.leadingAnchor, constant: progressViewHorizontalPadding),
+            cpuProgressBar.trailingAnchor.constraint(equalTo: cpuProgressView.trailingAnchor, constant: -progressViewHorizontalPadding),
+            cpuProgressBar.centerYAnchor.constraint(equalTo: cpuProgressView.centerYAnchor),
+            cpuProgressBar.heightAnchor.constraint(equalToConstant: 8)
+        ])
+        
+        // init segments
+        let userView = NSView()
+        userView.translatesAutoresizingMaskIntoConstraints = false
+        userView.wantsLayer = true
+        userView.layer?.backgroundColor = NSColor.systemBlue.cgColor
+
+        let sysView = NSView()
+        sysView.translatesAutoresizingMaskIntoConstraints = false
+        sysView.wantsLayer = true
+        sysView.layer?.backgroundColor = NSColor.systemOrange.cgColor
+
+        let idleView = NSView()
+        idleView.translatesAutoresizingMaskIntoConstraints = false
+        idleView.wantsLayer = true
+        idleView.layer?.backgroundColor = NSColor.systemGray.cgColor
+
+        cpuProgressBar.addSubview(userView)
+        cpuProgressBar.addSubview(sysView)
+        cpuProgressBar.addSubview(idleView)
+        
+        // position segments
+        NSLayoutConstraint.activate([
+            userView.leadingAnchor.constraint(equalTo: cpuProgressBar.leadingAnchor),
+            userView.topAnchor.constraint(equalTo: cpuProgressBar.topAnchor),
+            userView.bottomAnchor.constraint(equalTo: cpuProgressBar.bottomAnchor),
+            
+            sysView.leadingAnchor.constraint(equalTo: userView.trailingAnchor),
+            sysView.topAnchor.constraint(equalTo: cpuProgressBar.topAnchor),
+            sysView.bottomAnchor.constraint(equalTo: cpuProgressBar.bottomAnchor),
+            
+            idleView.leadingAnchor.constraint(equalTo: sysView.trailingAnchor),
+            idleView.trailingAnchor.constraint(equalTo: cpuProgressBar.trailingAnchor),
+            idleView.topAnchor.constraint(equalTo: cpuProgressBar.topAnchor),
+            idleView.bottomAnchor.constraint(equalTo: cpuProgressBar.bottomAnchor)
+        ])
+
+        cpuProgressItem.view = cpuProgressView
         
         let brandItem = NSMenuItem(title: "Brand: \(cpuBrand)", action: nil, keyEquivalent: "")
         brandItem.target=self
@@ -237,6 +294,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(userItem)
         menu.addItem(sysItem)
         menu.addItem(idleItem)
+        menu.addItem(cpuProgressItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(brandItem)
         menu.addItem(coresItem)
@@ -256,6 +314,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //        updateItem.target = self
 //        menu.addItem(updateItem)
         menu.addItem(quitItem)
+        updateCPUProgressView()
         cpuStatusItem?.menu = menu
     }
     
@@ -273,37 +332,55 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         
         let freePctItem = NSMenuItem(title: "Memory Free: \(memoryFreePercentage)", action: nil, keyEquivalent: "")
-        freePctItem.isEnabled = false
+        freePctItem.isEnabled = true
+        
+        let memoryProgressItem = NSMenuItem()
+        let memoryProgressView = createProgressContainerView()
+
+        let memoryProgressBar = ProgressBarView(frame: NSRect(x: 0, y: 8, width: 180, height: 8))
+        memoryProgressBar.translatesAutoresizingMaskIntoConstraints = false
+        memoryProgressBar.value = Double(memoryUsedPercentage.replacingOccurrences(of: "%", with: "")) ?? 0
+        memoryProgressBar.fillColor = NSColor.systemBlue
+        memoryProgressView.addSubview(memoryProgressBar)
+
+        NSLayoutConstraint.activate([
+            memoryProgressBar.leadingAnchor.constraint(equalTo: memoryProgressView.leadingAnchor, constant: progressViewHorizontalPadding),
+            memoryProgressBar.trailingAnchor.constraint(equalTo: memoryProgressView.trailingAnchor, constant: -progressViewHorizontalPadding),
+            memoryProgressBar.centerYAnchor.constraint(equalTo: memoryProgressView.centerYAnchor),
+            memoryProgressBar.heightAnchor.constraint(equalToConstant: 8)
+        ])
+
+        memoryProgressItem.view = memoryProgressView
         
         let totalMemoryItem = NSMenuItem(title: "Total Memory: \(memoryTotal)", action: nil, keyEquivalent: "")
-        totalMemoryItem.isEnabled = false
+        totalMemoryItem.isEnabled = true
         
         let pagesSection = NSMenuItem(title: "Pages", action: nil, keyEquivalent: "")
-        pagesSection.isEnabled = false
+        pagesSection.isEnabled = true
         
         let freeItem = NSMenuItem(title: "    Free: \(memoryPagesFree)", action: nil, keyEquivalent: "")
-        freeItem.isEnabled = false
+        freeItem.isEnabled = true
         
         let purgeableItem = NSMenuItem(title: "    Purgeable: \(memoryPagesPurgeable)", action: nil, keyEquivalent: "")
-        purgeableItem.isEnabled = false
+        purgeableItem.isEnabled = true
         
         let activeItem = NSMenuItem(title: "    Active: \(memoryPagesActive)", action: nil, keyEquivalent: "")
-        activeItem.isEnabled = false
+        activeItem.isEnabled = true
         
         let inactiveItem = NSMenuItem(title: "    Inactive: \(memoryPagesInactive)", action: nil, keyEquivalent: "")
-        inactiveItem.isEnabled = false
+        inactiveItem.isEnabled = true
         
         let compressedItem = NSMenuItem(title: "    Compressed: \(memoryPagesCompressed)", action: nil, keyEquivalent: "")
-        compressedItem.isEnabled = false
+        compressedItem.isEnabled = true
         
         let swapSection = NSMenuItem(title: "Swap", action: nil, keyEquivalent: "")
-        swapSection.isEnabled = false
+        swapSection.isEnabled = true
         
         let swapInsItem = NSMenuItem(title: "    Swap Ins: \(memorySwapIns)", action: nil, keyEquivalent: "")
-        swapInsItem.isEnabled = false
+        swapInsItem.isEnabled = true
         
         let swapOutsItem = NSMenuItem(title: "    Swap Outs: \(memorySwapOuts)", action: nil, keyEquivalent: "")
-        swapOutsItem.isEnabled = false
+        swapOutsItem.isEnabled = true
         
         let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshMemory), keyEquivalent: "r")
         refreshItem.target = self
@@ -315,6 +392,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         quitItem.target = self
         
         menu.addItem(freePctItem)
+        menu.addItem(memoryProgressItem)
         menu.addItem(totalMemoryItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(pagesSection)
@@ -335,7 +413,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //        updateItem.target = self
 //        menu.addItem(updateItem)
         menu.addItem(quitItem)
-        
+        updateMemoryProgressView()
         memoryStatusItem?.menu = menu
     }
     
@@ -351,14 +429,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         
         let titleItem = NSMenuItem(title: "Open Ports: \(openPorts.count)", action: nil, keyEquivalent: "")
-        titleItem.isEnabled = false
+        titleItem.isEnabled = true
         
         menu.addItem(titleItem)
         menu.addItem(NSMenuItem.separator())
         
         if openPorts.isEmpty {
             let noPortsItem = NSMenuItem(title: "No open ports detected", action: nil, keyEquivalent: "")
-            noPortsItem.isEnabled = false
+            noPortsItem.isEnabled = true
             menu.addItem(noPortsItem)
         } else {
             for port in openPorts {
@@ -408,16 +486,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         
         let ipItem = NSMenuItem(title: "Public IP: \(ip) (\(ipLoc))", action: nil, keyEquivalent: "")
-        ipItem.isEnabled = false
+        ipItem.isEnabled = true
         
         let networkItem = NSMenuItem(title: "Network SSID: \(networkSSID.isEmpty ? "Unknown" : networkSSID)", action: nil, keyEquivalent: "")
-        networkItem.isEnabled = false
+        networkItem.isEnabled = true
         
         let statusItem = NSMenuItem(title: "Connected? \(networkMonitorWrapper.isReachable ? "Yes" : "No")", action: nil, keyEquivalent: "")
-        statusItem.isEnabled = false
+        statusItem.isEnabled = true
         
         let devicesHeader = NSMenuItem(title: "Connected Devices: \(networkDeviceCount)", action: nil, keyEquivalent: "")
-        devicesHeader.isEnabled = false
+        devicesHeader.isEnabled = true
         
         let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshIP), keyEquivalent: "r")
         refreshItem.target = self
@@ -435,7 +513,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(devicesHeader)
         for device in networkDevices {
             let deviceItem = NSMenuItem(title: "    \(device.ip) (\(device.mac))", action: nil, keyEquivalent: "")
-            deviceItem.isEnabled = false
+            deviceItem.isEnabled = true
             menu.addItem(deviceItem)
         }
         menu.addItem(NSMenuItem.separator())
@@ -455,37 +533,55 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         
         let batteryItem = NSMenuItem(title: "Battery: \(batteryPct)", action: nil, keyEquivalent: "")
-        batteryItem.isEnabled = false
+        batteryItem.isEnabled = true
+        
+        let batteryProgressItem = NSMenuItem()
+        let batteryProgressView = createProgressContainerView()
+
+        let batteryProgressBar = ProgressBarView()
+        batteryProgressBar.translatesAutoresizingMaskIntoConstraints = false
+        batteryProgressBar.value = Double(batteryPct.replacingOccurrences(of: "%", with: "")) ?? 0
+        batteryProgressBar.fillColor = NSColor.systemGreen
+        batteryProgressView.addSubview(batteryProgressBar)
+
+        NSLayoutConstraint.activate([
+            batteryProgressBar.leadingAnchor.constraint(equalTo: batteryProgressView.leadingAnchor, constant: progressViewHorizontalPadding),
+            batteryProgressBar.trailingAnchor.constraint(equalTo: batteryProgressView.trailingAnchor, constant: -progressViewHorizontalPadding),
+            batteryProgressBar.centerYAnchor.constraint(equalTo: batteryProgressView.centerYAnchor),
+            batteryProgressBar.heightAnchor.constraint(equalToConstant: 8)
+        ])
+
+        batteryProgressItem.view = batteryProgressView
         
 //        let batteryStatusMenuItem = NSMenuItem(title: "Status: \(batteryIsCharging ? "Charging" : "Discharging")", action: nil, keyEquivalent: "")
-//        batteryStatusMenuItem.isEnabled = false
+//        batteryStatusMenuItem.isEnabled = true
         
         let timeItem = NSMenuItem(title: "Time remaining: \(batteryTime)", action: nil, keyEquivalent: "")
-        timeItem.isEnabled = false
+        timeItem.isEnabled = true
         
         let temperatureItem = NSMenuItem(title: "Temperature: \(batteryTemperature) °C", action: nil, keyEquivalent: "")
-        temperatureItem.isEnabled = false
+        temperatureItem.isEnabled = true
         
 //        let healthItem = NSMenuItem(title: "Health: \(batteryHealth)", action: nil, keyEquivalent: "")
-//        healthItem.isEnabled = false
+//        healthItem.isEnabled = true
         
         let cycleCountItem = NSMenuItem(title: "Cycle count: \(batteryCycleCount)", action: nil, keyEquivalent: "")
-        cycleCountItem.isEnabled = false
+        cycleCountItem.isEnabled = true
         
         let capacitySection = NSMenuItem(title: "Capacity", action: nil, keyEquivalent: "")
-        capacitySection.isEnabled = false
+        capacitySection.isEnabled = true
         
         let designCapacityItem = NSMenuItem(title: "    Design: \(batteryDesignCapacity) mAh", action: nil, keyEquivalent: "")
-        designCapacityItem.isEnabled = false
+        designCapacityItem.isEnabled = true
         
 //        let maxCapacityItem = NSMenuItem(title: "    Maximum: \(batteryMaxCapacity) mAh", action: nil, keyEquivalent: "")
-//        maxCapacityItem.isEnabled = false
+//        maxCapacityItem.isEnabled = true
         
         let currentCapacityItem = NSMenuItem(title: "    Current: \(batteryCurrentCapacity) mAh", action: nil, keyEquivalent: "")
-        currentCapacityItem.isEnabled = false
+        currentCapacityItem.isEnabled = true
         
         let voltageItem = NSMenuItem(title: "Cell voltage: \(batteryCellVoltage)", action: nil, keyEquivalent: "")
-        voltageItem.isEnabled = false
+        voltageItem.isEnabled = true
         
         let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshBattery), keyEquivalent: "r")
         refreshItem.target = self
@@ -497,6 +593,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         quitItem.target = self
         
         menu.addItem(batteryItem)
+        menu.addItem(batteryProgressItem)
 //        menu.addItem(batteryStatusMenuItem)
         menu.addItem(timeItem)
         menu.addItem(temperatureItem)
@@ -516,7 +613,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //        updateItem.target = self
 //        menu.addItem(updateItem)
         menu.addItem(quitItem)
-        
+        updateBatteryProgressView()
         batteryStatusItem?.menu = menu
     }
     
@@ -845,13 +942,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             menu.removeAllItems()
             
             let titleItem = NSMenuItem(title: "Open Ports: \(openPorts.count)", action: nil, keyEquivalent: "")
-            titleItem.isEnabled = false
+            titleItem.isEnabled = true
             menu.addItem(titleItem)
             menu.addItem(NSMenuItem.separator())
             
             if openPorts.isEmpty {
                 let noPortsItem = NSMenuItem(title: "No open ports detected", action: nil, keyEquivalent: "")
-                noPortsItem.isEnabled = false
+                noPortsItem.isEnabled = true
                 menu.addItem(noPortsItem)
             } else {
                 for portInfo in openPorts {
@@ -996,7 +1093,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 width: chartWidth,
                 height: 14
             ))
-            chartView.setValues(CPUHistory.shared.getLast30Minutes().map { $0.value }, is800PercentMode: CPUPctMode == 1)
+            chartView.setValues(CPUHistory.shared.getLast30MinutesValues(), is800PercentMode: CPUPctMode == 0)
             chartView.color = .controlAccentColor
             containerView.addSubview(chartView)
         }
@@ -1071,7 +1168,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //                    action: nil,
 //                    keyEquivalent: ""
 //                )
-//                item.isEnabled = false
+//                item.isEnabled = true
 //                
 //                if sensor.value.contains("°C"), let temp = Double(sensor.value.replacingOccurrences(of: " °C", with: "")) {
 //                    if temp > 80 {
@@ -1134,7 +1231,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //            action: nil,
 //            keyEquivalent: ""
 //        )
-//        errorItem.isEnabled = false
+//        errorItem.isEnabled = true
 //        submenu.addItem(errorItem)
 //        
 //        let helpItem = NSMenuItem(
@@ -1243,7 +1340,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
-        
+        updateCPUProgressView()
         DispatchQueue.main.asyncAfter(deadline: .now()+1) { [weak self] in
             self?.updateMenuItems()
         }
@@ -1335,11 +1432,78 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     self.memorySwapOuts = swapOuts
                 }
             }
-            
+            updateMemoryProgressView()
             DispatchQueue.main.async {
                 self.updateMemoryMenuItems()
             }
         }
+    }
+    
+    private func updateMemoryProgressView() {
+        guard let menu = memoryStatusItem?.menu,
+              menu.numberOfItems > 1,
+              let progressItem = menu.item(at: 1),
+              let progressView = progressItem.view,
+              let progressBar = progressView.subviews.first as? ProgressBarView else {
+            return
+        }
+        progressBar.value = Double(memoryUsedPercentage.replacingOccurrences(of: "%", with: "")) ?? 0
+    }
+
+    private func updateCPUProgressView() {
+        guard let menu = cpuStatusItem?.menu,
+              menu.numberOfItems > 4,
+              let progressItem = menu.item(at: 4),
+              let cpuProgressView = progressItem.view,
+              let cpuProgressBar = cpuProgressView.subviews.first,
+              cpuProgressBar.subviews.count >= 3 else {
+            return
+        }
+        
+        let userPct = Double(cpuPctUser.replacingOccurrences(of: "%", with: "")) ?? 0
+        let sysPct = Double(cpuPctSys.replacingOccurrences(of: "%", with: "")) ?? 0
+        let idlePct = Double(cpuPctIdle.replacingOccurrences(of: "%", with: "")) ?? 0
+        
+        let scaleFactor = CPUPctMode == 0 ? 8.0 : 1.0
+        
+        let normalizedUserPct = userPct / scaleFactor
+        let normalizedSysPct = sysPct / scaleFactor
+        
+        let userView = cpuProgressBar.subviews[0]
+        let sysView = cpuProgressBar.subviews[1]
+        let idleView = cpuProgressBar.subviews[2]
+        
+        let totalWidth = cpuProgressBar.bounds.width
+        
+        userView.constraints.forEach { userView.removeConstraint($0) }
+        sysView.constraints.forEach { sysView.removeConstraint($0) }
+        idleView.constraints.forEach { idleView.removeConstraint($0) }
+        
+        let userWidth = abs(totalWidth * CGFloat(normalizedUserPct / 100) - (2*progressViewHorizontalPadding))
+        let sysWidth = abs(totalWidth * CGFloat(normalizedSysPct / 100) - (2*progressViewHorizontalPadding))
+        
+        userView.widthAnchor.constraint(equalToConstant: userWidth).isActive = true
+        sysView.widthAnchor.constraint(equalToConstant: sysWidth).isActive = true
+        
+        NSLayoutConstraint.activate([
+            userView.leadingAnchor.constraint(equalTo: cpuProgressBar.leadingAnchor),
+            sysView.leadingAnchor.constraint(equalTo: userView.trailingAnchor),
+            idleView.leadingAnchor.constraint(equalTo: sysView.trailingAnchor),
+            idleView.trailingAnchor.constraint(equalTo: cpuProgressBar.trailingAnchor)
+        ])
+        
+        cpuProgressView.needsLayout = true
+    }
+
+    private func updateBatteryProgressView() {
+        guard let menu = batteryStatusItem?.menu,
+              menu.numberOfItems > 1,
+              let progressItem = menu.item(at: 1),
+              let progressView = progressItem.view,
+              let progressBar = progressView.subviews.first as? ProgressBarView else {
+            return
+        }
+        progressBar.value = Double(batteryPct.replacingOccurrences(of: "%", with: "")) ?? 0
     }
     
     private func updateNetworkDetails() {
@@ -1517,6 +1681,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.batteryTime = timeRemaining.isEmpty ? "..." : timeRemaining
             }
         }
+        updateBatteryProgressView()
     }
     
     private func setupObservers() {
@@ -1722,7 +1887,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if let devicesHeaderIndex = ipMenu.items.firstIndex(where: { $0.title.starts(with: "Connected Devices") }) {
                 for device in networkDevices {
                     let deviceItem = NSMenuItem(title: "    \(device.ip) (\(device.mac))", action: nil, keyEquivalent: "")
-                    deviceItem.isEnabled = false
+                    deviceItem.isEnabled = true
                     ipMenu.insertItem(deviceItem, at: devicesHeaderIndex + 1)
                 }
                 
@@ -1735,9 +1900,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         if let batteryMenu = batteryStatusItem?.menu, batteryMenu.items.count > 5 {
             batteryMenu.item(at: 0)?.title = "Battery: \(batteryPct)"
-            batteryMenu.item(at: 1)?.title = "Time remaining: \(batteryTime)"
-            batteryMenu.item(at: 2)?.title = "Temperature: \(batteryTemperature) °C"
-            batteryMenu.item(at: 6)?.title = "    Design: \(batteryDesignCapacity) mAh"
+            batteryMenu.item(at: 2)?.title = "Time remaining: \(batteryTime)"
+            batteryMenu.item(at: 3)?.title = "Temperature: \(batteryTemperature) °C"
+            batteryMenu.item(at: 4)?.title = "Cycle count: \(batteryCycleCount)"
+            batteryMenu.item(at: 7)?.title = "    Design: \(batteryDesignCapacity) mAh"
+            batteryMenu.item(at: 8)?.title = "    Current: \(batteryCurrentCapacity) mAh"
+            batteryMenu.item(at: 10)?.title = "Cell voltage: \(batteryCellVoltage)"
         }
     }
     
@@ -1761,7 +1929,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     let deviceName = device.name.hasSuffix(".") ? "Unknown" : device.name
                     let displayName = deviceName == "Unknown" ? "" : " (\(deviceName))"
                     let deviceItem = NSMenuItem(title: "    \(device.ip) - \(device.mac)\(displayName)", action: nil, keyEquivalent: "")
-                    deviceItem.isEnabled = false
+                    deviceItem.isEnabled = true
                     menu.addItem(deviceItem)
                 }
             }
@@ -1811,13 +1979,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.removeAllItems()
         
         let titleItem = NSMenuItem(title: "Open Ports: \(openPorts.count)", action: nil, keyEquivalent: "")
-        titleItem.isEnabled = false
+        titleItem.isEnabled = true
         menu.addItem(titleItem)
         menu.addItem(NSMenuItem.separator())
         
         if openPorts.isEmpty {
             let noPortsItem = NSMenuItem(title: "No open ports detected", action: nil, keyEquivalent: "")
-            noPortsItem.isEnabled = false
+            noPortsItem.isEnabled = true
             menu.addItem(noPortsItem)
         } else {
             for portInfo in openPorts {
@@ -2258,12 +2426,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func showCPUHistoryGraph() {
         guard let button = cpuStatusItem?.button else { return }
-        
+            
         if cpuGraphPopover == nil {
             let popover = NSPopover()
-            let history = CPUHistory.shared.getLast6Hours()
-            let maxValue = CPUHistory.shared.currentMaxValue()
-            let graphView = CPUHistoryGraph(history: history, maxValue: maxValue)
+            let history = CPUHistory.shared.getLast6Hours(is800PercentMode: CPUPctMode == 0)
+            let graphView = CPUHistoryGraph(history: history, maxValue: 100) // always use 100 as max
             popover.contentSize = NSSize(width: 320, height: 180)
             popover.behavior = .transient
             popover.contentViewController = NSViewController()
@@ -2276,6 +2443,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             cpuGraphPopover?.performClose(nil)
         }
+    }
+    
+    private func createProgressContainerView() -> NSView {
+        let container = NSView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.heightAnchor.constraint(equalToConstant: 24).isActive = true
+        return container
     }
 }
 

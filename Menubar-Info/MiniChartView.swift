@@ -92,8 +92,9 @@ class MiniChartView: NSView {
 
 
     func setValues(_ newValues: [Double], is800PercentMode: Bool = false) {
+        let normalizedValues = is800PercentMode ? newValues.map { $0 / 8.0 } : newValues
         self.is800PercentMode = is800PercentMode
-        self.values = Array(newValues.suffix(120))
+        self.values = Array(normalizedValues.suffix(120))
         needsDisplay = true
     }
 }

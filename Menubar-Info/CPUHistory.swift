@@ -20,50 +20,6 @@ struct CPUDataPoint: Codable {
 }
 
 @available(macOS 14.0, *)
-extension CPUHistory {
-    func getLast24Hours() -> [CPUDataPoint] {
-        let now = Date()
-        let twentyFourHoursAgo = now.addingTimeInterval(-24 * 60 * 60)
-        return dataPoints.filter { $0.timestamp >= twentyFourHoursAgo }
-    }
-
-    func getLast6Hours() -> [CPUDataPoint] {
-        let now = Date()
-        let sixHoursAgo = now.addingTimeInterval(-6 * 60 * 60)
-        return dataPoints.filter { $0.timestamp >= sixHoursAgo }
-    }
-    
-    func getLast30Minutes() -> [CPUDataPoint] {
-        let now = Date()
-        let thirtyMinutesAgo = now.addingTimeInterval(-1800)
-        return dataPoints.filter { $0.timestamp >= thirtyMinutesAgo }
-    }
-    
-    func getLast30MinutesValues() -> [Double] {
-        let now = Date()
-        let thirtyMinutesAgo = now.addingTimeInterval(-1800)
-        return dataPoints
-            .filter { $0.timestamp >= thirtyMinutesAgo }
-            .map { $0.value }
-    }
-    
-    func getLastHourValues() -> [Double] {
-        let now = Date()
-        let oneHourAgo = now.addingTimeInterval(-3600)
-        return dataPoints
-            .filter { $0.timestamp >= oneHourAgo }
-            .map { $0.value }
-    }
-    
-    func currentMaxValue() -> Double {
-        if let pctMode = UserDefaults.standard.value(forKey: "CPUPctMode") as? Int {
-            return pctMode == 0 ? 800.0 : 100.0
-        }
-        return 800.0
-    }
-}
-
-@available(macOS 14.0, *)
 class CPUHistory {
     static let shared = CPUHistory()
     private let maxPoints = 2880 // 24h * 60min * 2 (30s)
@@ -112,5 +68,67 @@ class CPUHistory {
     
     func getHistory() -> [CPUDataPoint] {
         return dataPoints
+    }
+    
+    func getLast24Hours() -> [CPUDataPoint] {
+        let now = Date()
+        let twentyFourHoursAgo = now.addingTimeInterval(-24 * 60 * 60)
+        return dataPoints.filter { $0.timestamp >= twentyFourHoursAgo }
+    }
+
+    func getLast6Hours() -> [CPUDataPoint] {
+        let now = Date()
+        let sixHoursAgo = now.addingTimeInterval(-6 * 60 * 60)
+        return dataPoints.filter { $0.timestamp >= sixHoursAgo }
+    }
+    
+    func getLast30Minutes() -> [CPUDataPoint] {
+        let now = Date()
+        let thirtyMinutesAgo = now.addingTimeInterval(-1800)
+        return dataPoints.filter { $0.timestamp >= thirtyMinutesAgo }
+    }
+    
+    func getLast30MinutesValues() -> [Double] {
+        let now = Date()
+        let thirtyMinutesAgo = now.addingTimeInterval(-1800)
+        return dataPoints
+            .filter { $0.timestamp >= thirtyMinutesAgo }
+            .map { $0.value }
+    }
+    
+    func getLastHourValues() -> [Double] {
+        let now = Date()
+        let oneHourAgo = now.addingTimeInterval(-3600)
+        return dataPoints
+            .filter { $0.timestamp >= oneHourAgo }
+            .map { $0.value }
+    }
+    
+    func currentMaxValue() -> Double {
+        if let pctMode = UserDefaults.standard.value(forKey: "CPUPctMode") as? Int {
+            return pctMode == 0 ? 800.0 : 100.0
+        }
+        return 800.0
+    }
+    
+    func getNormalizedValues(for points: [CPUDataPoint], is800PercentMode: Bool) -> [CPUDataPoint] {
+        if is800PercentMode {
+            return points.map { CPUDataPoint(value: $0.value / 8.0, timestamp: $0.timestamp) }
+        }
+        return points
+    }
+
+    func getLast30Minutes(is800PercentMode: Bool) -> [CPUDataPoint] {
+        let now = Date()
+        let thirtyMinutesAgo = now.addingTimeInterval(-1800)
+        let filtered = dataPoints.filter { $0.timestamp >= thirtyMinutesAgo }
+        return getNormalizedValues(for: filtered, is800PercentMode: is800PercentMode)
+    }
+
+    func getLast6Hours(is800PercentMode: Bool) -> [CPUDataPoint] {
+        let now = Date()
+        let sixHoursAgo = now.addingTimeInterval(-6 * 60 * 60)
+        let filtered = dataPoints.filter { $0.timestamp >= sixHoursAgo }
+        return getNormalizedValues(for: filtered, is800PercentMode: is800PercentMode)
     }
 }

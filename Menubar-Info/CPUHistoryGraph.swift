@@ -19,14 +19,14 @@ struct CPUHistoryGraph: View {
                 ForEach(Array(history.enumerated()), id: \.offset) { index, point in
                     LineMark(
                         x: .value("Time", point.timestamp),
-                        y: .value("Usage", min(point.value, maxValue))
+                        y: .value("Usage", min(point.value, 100))
                     )
                     .interpolationMethod(.catmullRom)
                     
                     AreaMark(
                         x: .value("Time", point.timestamp),
                         yStart: .value("Min", 0),
-                        yEnd: .value("Usage", min(point.value, maxValue))
+                        yEnd: .value("Usage", min(point.value, 100))
                     )
                     .foregroundStyle(LinearGradient(
                         gradient: Gradient(colors: [.blue.opacity(0.3), .blue.opacity(0.1)]),
