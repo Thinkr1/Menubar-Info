@@ -403,6 +403,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    @objc private func doNothing() {}
+    
+    private func styledMenuItemText(label: String, value: String) -> NSAttributedString {
+        let attributedString = NSMutableAttributedString()
+        
+        let labelAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: NSColor.secondaryLabelColor
+        ]
+        attributedString.append(NSAttributedString(string: label, attributes: labelAttributes))
+        
+        let valueAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: NSColor.labelColor
+        ]
+        attributedString.append(NSAttributedString(string: value, attributes: valueAttributes))
+        
+        return attributedString
+    }
+    
     private func setupCPUStatusItem() {
         cpuStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         updateCPUStatusItem()
@@ -425,16 +443,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let menu = NSMenu()
         
-        let usageItem = NSMenuItem(title: "CPU Usage: \(CPUUsage)%", action: nil, keyEquivalent: "")
+        let usageItem = NSMenuItem(title: "CPU Usage: \(CPUUsage)%", action: #selector(doNothing), keyEquivalent: "")
         usageItem.isEnabled = true
         
-        let userItem = NSMenuItem(title: "    User: \(cpuPctUser)%", action: nil, keyEquivalent: "")
+        let userItem = NSMenuItem(title: "    User: \(cpuPctUser)%", action: #selector(doNothing), keyEquivalent: "")
         userItem.isEnabled = true
         
-        let sysItem = NSMenuItem(title: "    System: \(cpuPctSys)%", action: nil, keyEquivalent: "")
+        let sysItem = NSMenuItem(title: "    System: \(cpuPctSys)%", action: #selector(doNothing), keyEquivalent: "")
         sysItem.isEnabled = true
         
-        let idleItem = NSMenuItem(title: "    Idle: \(cpuPctIdle)%", action: nil, keyEquivalent: "")
+        let idleItem = NSMenuItem(title: "    Idle: \(cpuPctIdle)%", action: #selector(doNothing), keyEquivalent: "")
         idleItem.isEnabled = true
         
         let cpuProgressItem = NSMenuItem()
@@ -493,25 +511,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         cpuProgressItem.view = cpuProgressView
         
-        let brandItem = NSMenuItem(title: "Brand: \(cpuBrand)", action: nil, keyEquivalent: "")
+        let brandItem = NSMenuItem(title: "Brand: \(cpuBrand)", action: #selector(doNothing), keyEquivalent: "")
         brandItem.target=self
         
-        let coresItem = NSMenuItem(title: "    Cores: \(cpuCores)", action: nil, keyEquivalent: "")
+        let coresItem = NSMenuItem(title: "    Cores: \(cpuCores)", action: #selector(doNothing), keyEquivalent: "")
         coresItem.target=self
         
-        let threadsItem = NSMenuItem(title: "    Threads: \(cpuThreads)", action: nil, keyEquivalent: "")
+        let threadsItem = NSMenuItem(title: "    Threads: \(cpuThreads)", action: #selector(doNothing), keyEquivalent: "")
         threadsItem.target=self
         
-        let cacheL1Item = NSMenuItem(title: "    Cache L1: \(cpuCacheL1)", action: nil, keyEquivalent: "")
+        let cacheL1Item = NSMenuItem(title: "    Cache L1: \(cpuCacheL1)", action: #selector(doNothing), keyEquivalent: "")
         cacheL1Item.target=self
         
-        let cacheL2Item = NSMenuItem(title: "    Cache L2: \(cpuCacheL2)", action: nil, keyEquivalent: "")
+        let cacheL2Item = NSMenuItem(title: "    Cache L2: \(cpuCacheL2)", action: #selector(doNothing), keyEquivalent: "")
         cacheL2Item.target=self
         
-        let osVersionItem = NSMenuItem(title: "OS Version: \(osVersion)", action: nil, keyEquivalent: "")
+        let osVersionItem = NSMenuItem(title: "OS Version: \(osVersion)", action: #selector(doNothing), keyEquivalent: "")
         osVersionItem.target=self
         
-        let kernelVersionItem = NSMenuItem(title: "Kernel Version: \(kernelVersion)", action: nil, keyEquivalent: "")
+        let kernelVersionItem = NSMenuItem(title: "Kernel Version: \(kernelVersion)", action: #selector(doNothing), keyEquivalent: "")
         kernelVersionItem.target=self
         
         let showGraphItem = NSMenuItem(title: "Show CPU Usage Graph", action: #selector(showCPUHistoryGraph), keyEquivalent: "g")
@@ -567,7 +585,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let menu = NSMenu()
         
-        let freePctItem = NSMenuItem(title: "Memory Free: \(memoryFreePercentage)", action: nil, keyEquivalent: "")
+        let freePctItem = NSMenuItem(title: "Memory Free: \(memoryFreePercentage)", action: #selector(doNothing), keyEquivalent: "")
         freePctItem.isEnabled = true
         
         let memoryProgressItem = NSMenuItem()
@@ -588,34 +606,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         memoryProgressItem.view = memoryProgressView
         
-        let totalMemoryItem = NSMenuItem(title: "Total Memory: \(memoryTotal)", action: nil, keyEquivalent: "")
+        let totalMemoryItem = NSMenuItem(title: "Total Memory: \(memoryTotal)", action: #selector(doNothing), keyEquivalent: "")
         totalMemoryItem.isEnabled = true
         
-        let pagesSection = NSMenuItem(title: "Pages", action: nil, keyEquivalent: "")
+        let pagesSection = NSMenuItem(title: "Pages", action: #selector(doNothing), keyEquivalent: "")
         pagesSection.isEnabled = true
         
-        let freeItem = NSMenuItem(title: "    Free: \(memoryPagesFree)", action: nil, keyEquivalent: "")
+        let freeItem = NSMenuItem(title: "    Free: \(memoryPagesFree)", action: #selector(doNothing), keyEquivalent: "")
         freeItem.isEnabled = true
         
-        let purgeableItem = NSMenuItem(title: "    Purgeable: \(memoryPagesPurgeable)", action: nil, keyEquivalent: "")
+        let purgeableItem = NSMenuItem(title: "    Purgeable: \(memoryPagesPurgeable)", action: #selector(doNothing), keyEquivalent: "")
         purgeableItem.isEnabled = true
         
-        let activeItem = NSMenuItem(title: "    Active: \(memoryPagesActive)", action: nil, keyEquivalent: "")
+        let activeItem = NSMenuItem(title: "    Active: \(memoryPagesActive)", action: #selector(doNothing), keyEquivalent: "")
         activeItem.isEnabled = true
         
-        let inactiveItem = NSMenuItem(title: "    Inactive: \(memoryPagesInactive)", action: nil, keyEquivalent: "")
+        let inactiveItem = NSMenuItem(title: "    Inactive: \(memoryPagesInactive)", action: #selector(doNothing), keyEquivalent: "")
         inactiveItem.isEnabled = true
         
-        let compressedItem = NSMenuItem(title: "    Compressed: \(memoryPagesCompressed)", action: nil, keyEquivalent: "")
+        let compressedItem = NSMenuItem(title: "    Compressed: \(memoryPagesCompressed)", action: #selector(doNothing), keyEquivalent: "")
         compressedItem.isEnabled = true
         
-        let swapSection = NSMenuItem(title: "Swap", action: nil, keyEquivalent: "")
+        let swapSection = NSMenuItem(title: "Swap", action: #selector(doNothing), keyEquivalent: "")
         swapSection.isEnabled = true
         
-        let swapInsItem = NSMenuItem(title: "    Swap Ins: \(memorySwapIns)", action: nil, keyEquivalent: "")
+        let swapInsItem = NSMenuItem(title: "    Swap Ins: \(memorySwapIns)", action: #selector(doNothing), keyEquivalent: "")
         swapInsItem.isEnabled = true
         
-        let swapOutsItem = NSMenuItem(title: "    Swap Outs: \(memorySwapOuts)", action: nil, keyEquivalent: "")
+        let swapOutsItem = NSMenuItem(title: "    Swap Outs: \(memorySwapOuts)", action: #selector(doNothing), keyEquivalent: "")
         swapOutsItem.isEnabled = true
         
         let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshMemory), keyEquivalent: "r")
@@ -664,19 +682,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let menu = NSMenu()
         
-        let titleItem = NSMenuItem(title: "Open Ports: \(openPorts.count)", action: nil, keyEquivalent: "")
+        let titleItem = NSMenuItem(title: "Open Ports: \(openPorts.count)", action: #selector(doNothing), keyEquivalent: "")
         titleItem.isEnabled = true
         
         menu.addItem(titleItem)
         menu.addItem(NSMenuItem.separator())
         
         if openPorts.isEmpty {
-            let noPortsItem = NSMenuItem(title: "No open ports detected", action: nil, keyEquivalent: "")
+            let noPortsItem = NSMenuItem(title: "No open ports detected", action: #selector(doNothing), keyEquivalent: "")
             noPortsItem.isEnabled = true
             menu.addItem(noPortsItem)
         } else {
             for port in openPorts {
-                let portItem = NSMenuItem(title: port, action: nil, keyEquivalent: "")
+                let portItem = NSMenuItem(title: port, action: #selector(doNothing), keyEquivalent: "")
                 portItem.isEnabled = true
                 menu.addItem(portItem)
             }
@@ -721,16 +739,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let menu = NSMenu()
         
-        let ipItem = NSMenuItem(title: "Public IP: \(ip) (\(ipLoc))", action: nil, keyEquivalent: "")
+        let ipItem = NSMenuItem(title: "Public IP: \(ip) (\(ipLoc))", action: #selector(doNothing), keyEquivalent: "")
         ipItem.isEnabled = true
         
-        let networkItem = NSMenuItem(title: "Network SSID: \(networkSSID.isEmpty ? "Unknown" : networkSSID)", action: nil, keyEquivalent: "")
+        let networkItem = NSMenuItem(title: "Network SSID: \(networkSSID.isEmpty ? "Unknown" : networkSSID)", action: #selector(doNothing), keyEquivalent: "")
         networkItem.isEnabled = true
         
-        let statusItem = NSMenuItem(title: "Connected? \(networkMonitorWrapper.isReachable ? "Yes" : "No")", action: nil, keyEquivalent: "")
+        let statusItem = NSMenuItem(title: "Connected? \(networkMonitorWrapper.isReachable ? "Yes" : "No")", action: #selector(doNothing), keyEquivalent: "")
         statusItem.isEnabled = true
         
-        let devicesHeader = NSMenuItem(title: "Connected Devices: \(networkDeviceCount)", action: nil, keyEquivalent: "")
+        let devicesHeader = NSMenuItem(title: "Connected Devices: \(networkDeviceCount)", action: #selector(doNothing), keyEquivalent: "")
         devicesHeader.isEnabled = true
         
         let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshIP), keyEquivalent: "r")
@@ -748,7 +766,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(devicesHeader)
         for device in networkDevices {
-            let deviceItem = NSMenuItem(title: "    \(device.ip) (\(device.mac))", action: nil, keyEquivalent: "")
+            let deviceItem = NSMenuItem(title: "    \(device.ip) (\(device.mac))", action: #selector(doNothing), keyEquivalent: "")
             deviceItem.isEnabled = true
             menu.addItem(deviceItem)
         }
@@ -768,7 +786,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let menu = NSMenu()
         
-        let batteryItem = NSMenuItem(title: "Battery: \(batteryPct)", action: nil, keyEquivalent: "")
+        let batteryItem = NSMenuItem(title: "Battery: \(batteryPct)", action: #selector(doNothing), keyEquivalent: "")
         batteryItem.isEnabled = true
         
         let batteryProgressItem = NSMenuItem()
@@ -789,34 +807,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         batteryProgressItem.view = batteryProgressView
         
-//        let batteryStatusMenuItem = NSMenuItem(title: "Status: \(batteryIsCharging ? "Charging" : "Discharging")", action: nil, keyEquivalent: "")
+//        let batteryStatusMenuItem = NSMenuItem(title: "Status: \(batteryIsCharging ? "Charging" : "Discharging")", action: #selector(doNothing), keyEquivalent: "")
 //        batteryStatusMenuItem.isEnabled = true
         
-        let timeItem = NSMenuItem(title: "Time remaining: \(batteryTime)", action: nil, keyEquivalent: "")
+        let timeItem = NSMenuItem(title: "Time remaining: \(batteryTime)", action: #selector(doNothing), keyEquivalent: "")
         timeItem.isEnabled = true
         
-        let temperatureItem = NSMenuItem(title: "Temperature: \(batteryTemperature) °C", action: nil, keyEquivalent: "")
+        let temperatureItem = NSMenuItem(title: "Temperature: \(batteryTemperature) °C", action: #selector(doNothing), keyEquivalent: "")
         temperatureItem.isEnabled = true
         
-//        let healthItem = NSMenuItem(title: "Health: \(batteryHealth)", action: nil, keyEquivalent: "")
+//        let healthItem = NSMenuItem(title: "Health: \(batteryHealth)", action: #selector(doNothing), keyEquivalent: "")
 //        healthItem.isEnabled = true
         
-        let cycleCountItem = NSMenuItem(title: "Cycle count: \(batteryCycleCount)", action: nil, keyEquivalent: "")
+        let cycleCountItem = NSMenuItem(title: "Cycle count: \(batteryCycleCount)", action: #selector(doNothing), keyEquivalent: "")
         cycleCountItem.isEnabled = true
         
-        let capacitySection = NSMenuItem(title: "Capacity", action: nil, keyEquivalent: "")
+        let capacitySection = NSMenuItem(title: "Capacity", action: #selector(doNothing), keyEquivalent: "")
         capacitySection.isEnabled = true
         
-        let designCapacityItem = NSMenuItem(title: "    Design: \(batteryDesignCapacity) mAh", action: nil, keyEquivalent: "")
+        let designCapacityItem = NSMenuItem(title: "    Design: \(batteryDesignCapacity) mAh", action: #selector(doNothing), keyEquivalent: "")
         designCapacityItem.isEnabled = true
         
-//        let maxCapacityItem = NSMenuItem(title: "    Maximum: \(batteryMaxCapacity) mAh", action: nil, keyEquivalent: "")
+//        let maxCapacityItem = NSMenuItem(title: "    Maximum: \(batteryMaxCapacity) mAh", action: #selector(doNothing), keyEquivalent: "")
 //        maxCapacityItem.isEnabled = true
         
-        let currentCapacityItem = NSMenuItem(title: "    Current: \(batteryCurrentCapacity) mAh", action: nil, keyEquivalent: "")
+        let currentCapacityItem = NSMenuItem(title: "    Current: \(batteryCurrentCapacity) mAh", action: #selector(doNothing), keyEquivalent: "")
         currentCapacityItem.isEnabled = true
         
-        let voltageItem = NSMenuItem(title: "Cell voltage: \(batteryCellVoltage)", action: nil, keyEquivalent: "")
+        let voltageItem = NSMenuItem(title: "Cell voltage: \(batteryCellVoltage)", action: #selector(doNothing), keyEquivalent: "")
         voltageItem.isEnabled = true
         
         let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshBattery), keyEquivalent: "r")
@@ -1177,19 +1195,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             menu.removeAllItems()
             
-            let titleItem = NSMenuItem(title: "Open Ports: \(openPorts.count)", action: nil, keyEquivalent: "")
+            let titleItem = NSMenuItem()
+            titleItem.attributedTitle = styledMenuItemText(label: "Open Ports: ", value: "\(openPorts.count)")
+            titleItem.action = #selector(doNothing)
             titleItem.isEnabled = true
             menu.addItem(titleItem)
             menu.addItem(NSMenuItem.separator())
             
             if openPorts.isEmpty {
-                let noPortsItem = NSMenuItem(title: "No open ports detected", action: nil, keyEquivalent: "")
+                let noPortsItem = NSMenuItem(title: "No open ports detected", action: #selector(doNothing), keyEquivalent: "")
                 noPortsItem.isEnabled = true
                 menu.addItem(noPortsItem)
             } else {
                 for portInfo in openPorts {
                     let portData = extractPortData(from: portInfo)
-                    let portItem = NSMenuItem(title: portInfo, action: nil, keyEquivalent: "")
+                    let portItem = NSMenuItem(title: portInfo, action: #selector(doNothing), keyEquivalent: "")
                     
                     let submenu = NSMenu()
                     
@@ -1388,20 +1408,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //        if let existingItem = mainMenu.item(withTitle: "Sensors") {
 //            smcMenuItem = existingItem
 //        } else {
-//            smcMenuItem = NSMenuItem(title: "Sensors", action: nil, keyEquivalent: "")
+//            smcMenuItem = NSMenuItem(title: "Sensors", action: #selector(doNothing), keyEquivalent: "")
 //            mainMenu.insertItem(smcMenuItem, at: mainMenu.items.count - 1)
 //        }
 //        
 //        let submenu = NSMenu(title: "System Sensors")
 //        
 //        for category in smcCategories {
-//            let categoryItem = NSMenuItem(title: category.name, action: nil, keyEquivalent: "")
+//            let categoryItem = NSMenuItem(title: category.name, action: #selector(doNothing), keyEquivalent: "")
 //            let categoryMenu = NSMenu(title: category.name)
 //            
 //            for sensor in category.sensors {
 //                let item = NSMenuItem(
 //                    title: "\(sensor.description): \(sensor.value)",
-//                    action: nil,
+//                    action: #selector(doNothing),
 //                    keyEquivalent: ""
 //                )
 //                item.isEnabled = true
@@ -1456,7 +1476,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //        if let existingItem = mainMenu.item(withTitle: "Sensors") {
 //            smcMenuItem = existingItem
 //        } else {
-//            smcMenuItem = NSMenuItem(title: "Sensors", action: nil, keyEquivalent: "")
+//            smcMenuItem = NSMenuItem(title: "Sensors", action: #selector(doNothing), keyEquivalent: "")
 //            mainMenu.insertItem(smcMenuItem, at: mainMenu.items.count - 1)
 //        }
 //        
@@ -1464,7 +1484,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //        
 //        let errorItem = NSMenuItem(
 //            title: "Sensor Access Denied",
-//            action: nil,
+//            action: #selector(doNothing),
 //            keyEquivalent: ""
 //        )
 //        errorItem.isEnabled = true
@@ -2173,27 +2193,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let cpuMenu = cpuStatusItem?.menu {
             for item in cpuMenu.items {
                 if item.title.starts(with: "CPU Usage") {
-                    item.title = "CPU Usage: \(CPUUsage)%"
+                    item.attributedTitle = styledMenuItemText(label: "CPU Usage: ", value: "\(CPUUsage)%")
                 } else if item.title.starts(with: "Brand") {
-                    item.title = "Brand: \(cpuBrand)"
+                    item.attributedTitle = styledMenuItemText(label: "Brand: ", value: cpuBrand)
                 } else if item.title.starts(with: "    User") {
-                    item.title = "    User: \(cpuPctUser)"
+                    item.attributedTitle = styledMenuItemText(label: "    User: ", value: cpuPctUser)
                 } else if item.title.starts(with: "    System") {
-                    item.title = "    System: \(cpuPctSys)"
+                    item.attributedTitle = styledMenuItemText(label: "    System: ", value: cpuPctSys)
                 } else if item.title.starts(with: "    Idle") {
-                    item.title = "    Idle: \(cpuPctIdle)"
+                    item.attributedTitle = styledMenuItemText(label: "    Idle: ", value: cpuPctIdle)
                 } else if item.title.starts(with: "    Cores") {
-                    item.title = "    Cores: \(cpuCores)"
+                    item.attributedTitle = styledMenuItemText(label: "    Cores: ", value: cpuCores)
                 } else if item.title.starts(with: "    Threads") {
-                    item.title = "    Threads: \(cpuThreads)"
+                    item.attributedTitle = styledMenuItemText(label: "    Threads: ", value: cpuThreads)
                 } else if item.title.starts(with: "    Cache L1") {
-                    item.title = "    Cache L1: \(cpuCacheL1)"
+                    item.attributedTitle = styledMenuItemText(label: "    Cache L1: ", value: cpuCacheL1)
                 } else if item.title.starts(with: "    Cache L2") {
-                    item.title = "    Cache L2: \(cpuCacheL2)"
+                    item.attributedTitle = styledMenuItemText(label: "    Cache L2: ", value: cpuCacheL2)
                 } else if item.title.starts(with: "OS Version") {
-                    item.title = "OS Version: \(osVersion)"
+                    item.attributedTitle = styledMenuItemText(label: "OS Version: ", value: osVersion)
                 } else if item.title.starts(with: "Kernel Version") {
-                    item.title = "Kernel Version: \(kernelVersion)"
+                    item.attributedTitle = styledMenuItemText(label: "Kernel Version: ", value: kernelVersion)
                 }
             }
         }
@@ -2201,13 +2221,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let ipMenu = ipStatusItem?.menu {
             for item in ipMenu.items {
                 if item.title.starts(with: "Public IP") {
-                    item.title = "Public IP: \(ip) (\(ipLoc))"
+                    item.attributedTitle = styledMenuItemText(label: "Public IP: ", value: "\(ip) (\(ipLoc))")
                 } else if item.title.starts(with: "Network SSID") {
-                    item.title = "Network SSID: \(networkSSID.isEmpty ? "Unknown" : networkSSID)"
+                    item.attributedTitle = styledMenuItemText(label: "Network SSID: ", value: networkSSID.isEmpty ? "Unknown" : networkSSID)
                 } else if item.title.starts(with: "Connected?") {
-                    item.title = "Connected? \(networkMonitorWrapper.isReachable ? "Yes" : "No")"
+                    item.attributedTitle = styledMenuItemText(label: "Connected? ", value: networkMonitorWrapper.isReachable ? "Yes" : "No")
                 } else if item.title.starts(with: "Connected Devices") {
-                    item.title = "Connected Devices: \(networkDeviceCount)"
+                    item.attributedTitle = styledMenuItemText(label: "Connected Devices: ", value: "\(networkDeviceCount)")
                 }
             }
             
@@ -2215,7 +2235,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             if let devicesHeaderIndex = ipMenu.items.firstIndex(where: { $0.title.starts(with: "Connected Devices") }) {
                 for device in networkDevices {
-                    let deviceItem = NSMenuItem(title: "    \(device.ip) (\(device.mac))", action: nil, keyEquivalent: "")
+                    let deviceItem = NSMenuItem(title: "    \(device.ip) (\(device.mac))", action: #selector(doNothing), keyEquivalent: "")
                     deviceItem.isEnabled = true
                     ipMenu.insertItem(deviceItem, at: devicesHeaderIndex + 1)
                 }
@@ -2228,13 +2248,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         if let batteryMenu = batteryStatusItem?.menu, batteryMenu.items.count > 5 {
-            batteryMenu.item(at: 0)?.title = "Battery: \(batteryPct)"
-            batteryMenu.item(at: 2)?.title = "Time remaining: \(batteryTime)"
-            batteryMenu.item(at: 3)?.title = "Temperature: \(batteryTemperature) °C"
-            batteryMenu.item(at: 4)?.title = "Cycle count: \(batteryCycleCount)"
-            batteryMenu.item(at: 7)?.title = "    Design: \(batteryDesignCapacity) mAh"
-            batteryMenu.item(at: 8)?.title = "    Current: \(batteryCurrentCapacity) mAh"
-            batteryMenu.item(at: 10)?.title = "Cell voltage: \(batteryCellVoltage)"
+            batteryMenu.item(at: 0)?.attributedTitle = styledMenuItemText(label: "Battery: ", value: batteryPct)
+            batteryMenu.item(at: 2)?.attributedTitle = styledMenuItemText(label: "Time remaining: ", value: batteryTime)
+            batteryMenu.item(at: 3)?.attributedTitle = styledMenuItemText(label: "Temperature: ", value: "\(batteryTemperature) °C")
+            batteryMenu.item(at: 4)?.attributedTitle = styledMenuItemText(label: "Cycle count: ", value: batteryCycleCount)
+            batteryMenu.item(at: 7)?.attributedTitle = styledMenuItemText(label: "    Design: ", value: "\(batteryDesignCapacity) mAh")
+            batteryMenu.item(at: 8)?.attributedTitle = styledMenuItemText(label: "    Current: ", value: "\(batteryCurrentCapacity) mAh")
+            batteryMenu.item(at: 10)?.attributedTitle = styledMenuItemText(label: "Cell voltage: ", value: batteryCellVoltage)
         }
     }
     
@@ -2249,7 +2269,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         for item in nonDeviceItems {
             if item.title.contains("Connected Devices") {
-                item.title = "Connected Devices: \(devices.count)"
+                item.attributedTitle = styledMenuItemText(label: "Connected Devices: ", value: "\(devices.count)")
             }
             menu.addItem(item)
             
@@ -2257,7 +2277,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 for device in devices {
                     let deviceName = device.name.hasSuffix(".") ? "Unknown" : device.name
                     let displayName = deviceName == "Unknown" ? "" : " (\(deviceName))"
-                    let deviceItem = NSMenuItem(title: "    \(device.ip) - \(device.mac)\(displayName)", action: nil, keyEquivalent: "")
+                    let deviceItem = NSMenuItem(title: "    \(device.ip) - \(device.mac)\(displayName)", action: #selector(doNothing), keyEquivalent: "")
                     deviceItem.isEnabled = true
                     menu.addItem(deviceItem)
                 }
@@ -2271,28 +2291,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 if item.title.starts(with: "Memory Free") || item.title.starts(with: "Memory Used") {
                     switch memoryDisplayMode {
                     case 0:
-                        item.title = "Memory Free: \(memoryFreePercentage)"
+                        item.attributedTitle = styledMenuItemText(label: "Memory Free: ", value: memoryFreePercentage)
                     case 1:
-                        item.title = "Memory Used: \(memoryUsedPercentage)"
+                        item.attributedTitle = styledMenuItemText(label: "Memory Used: ", value: memoryUsedPercentage)
                     default:
-                        item.title = "Memory Free: \(memoryFreePercentage)"
+                        item.attributedTitle = styledMenuItemText(label: "Memory Free: ", value: memoryFreePercentage)
                     }
                 } else if item.title.starts(with: "Total Memory") {
-                    item.title = "Total Memory: \(memoryTotal)"
+                    item.attributedTitle = styledMenuItemText(label: "Total Memory: ", value: memoryTotal)
                 } else if item.title.starts(with: "    Free:") {
-                    item.title = "    Free: \(memoryPagesFree)"
+                    item.attributedTitle = styledMenuItemText(label: "    Free: ", value: memoryPagesFree)
                 } else if item.title.starts(with: "    Purgeable:") {
-                    item.title = "    Purgeable: \(memoryPagesPurgeable)"
+                    item.attributedTitle = styledMenuItemText(label: "    Purgeable: ", value: memoryPagesPurgeable)
                 } else if item.title.starts(with: "    Active:") {
-                    item.title = "    Active: \(memoryPagesActive)"
+                    item.attributedTitle = styledMenuItemText(label: "    Active: ", value: memoryPagesActive)
                 } else if item.title.starts(with: "    Inactive:") {
-                    item.title = "    Inactive: \(memoryPagesInactive)"
+                    item.attributedTitle = styledMenuItemText(label: "    Inactive: ", value: memoryPagesInactive)
                 } else if item.title.starts(with: "    Compressed:") {
-                    item.title = "    Compressed: \(memoryPagesCompressed)"
+                    item.attributedTitle = styledMenuItemText(label: "    Compressed: ", value: memoryPagesCompressed)
                 } else if item.title.starts(with: "    Swap Ins:") {
-                    item.title = "    Swap Ins: \(memorySwapIns)"
+                    item.attributedTitle = styledMenuItemText(label: "    Swap Ins: ", value: memorySwapIns)
                 } else if item.title.starts(with: "    Swap Outs:") {
-                    item.title = "    Swap Outs: \(memorySwapOuts)"
+                    item.attributedTitle = styledMenuItemText(label: "    Swap Outs: ", value: memorySwapOuts)
                 }
             }
         }
@@ -2307,19 +2327,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         menu.removeAllItems()
         
-        let titleItem = NSMenuItem(title: "Open Ports: \(openPorts.count)", action: nil, keyEquivalent: "")
+//        let titleItem = NSMenuItem(title: "Open Ports: \(openPorts.count)", action: #selector(doNothing), keyEquivalent: "")
+        let titleItem = NSMenuItem()
+        titleItem.attributedTitle = styledMenuItemText(label: "Open Ports: ", value: "\(openPorts.count)")
+        titleItem.action = #selector(doNothing)
         titleItem.isEnabled = true
         menu.addItem(titleItem)
         menu.addItem(NSMenuItem.separator())
         
         if openPorts.isEmpty {
-            let noPortsItem = NSMenuItem(title: "No open ports detected", action: nil, keyEquivalent: "")
+            let noPortsItem = NSMenuItem(title: "No open ports detected", action: #selector(doNothing), keyEquivalent: "")
             noPortsItem.isEnabled = true
             menu.addItem(noPortsItem)
         } else {
             for portInfo in openPorts {
                 let portData = extractPortData(from: portInfo)
-                let portItem = NSMenuItem(title: portInfo, action: nil, keyEquivalent: "")
+                let portItem = NSMenuItem(title: portInfo, action: #selector(doNothing), keyEquivalent: "")
                 
                 let submenu = NSMenu()
                 
