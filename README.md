@@ -12,18 +12,19 @@ A lightweight macOS menu bar utility for real-time system metrics—monitoring C
 
 #### CPU And Memory Monitoring
 
-<img width="576" alt="CPU" src="https://github.com/user-attachments/assets/8346086d-d62b-405f-88e5-4707a42b96b2" />
-<img width="268" alt="Memory" src="https://github.com/user-attachments/assets/f57888e9-eb82-46e1-90ab-62d22659b478" />
+<img width="587" alt="CPU" src="https://github.com/user-attachments/assets/afdec0e7-d00d-4941-bc2c-73cf4b0e2ca4" />
+<img width="269" alt="Memory" src="https://github.com/user-attachments/assets/487b70f9-ce98-419e-83bf-e41a78960e4f" />
+
 
 #### Ports
 
-<img width="374" alt="Ports" src="https://github.com/user-attachments/assets/4f7da2e5-fde5-449a-a6d9-c3a216262e2c" />
+<img width="340" alt="Ports" src="https://github.com/user-attachments/assets/8366a018-0539-439d-8744-de4e03534641" />
 <img width="546" alt="Ports - Manager" src="https://github.com/user-attachments/assets/e2d6e749-488c-4875-9f73-50ad02e08109" />
 
 #### Network and Battery Monitoring
 
-<img width="308" alt="Network" src="https://github.com/user-attachments/assets/19a2c086-2a8b-4d26-9c50-544ac90c235f" />
-<img width="259" alt="Battery" src="https://github.com/user-attachments/assets/7b89facd-8e7a-4269-a01a-750a0bf4e3e6" />
+<img width="320" alt="Network" src="https://github.com/user-attachments/assets/a36c821a-0419-4a44-a950-373d7743cec5" />
+<img width="262" alt="Battery" src="https://github.com/user-attachments/assets/0b863944-5b68-4d81-9567-f4a6e66e6806" />
 
 ## Install
 
