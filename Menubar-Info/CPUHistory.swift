@@ -24,11 +24,14 @@ class CPUHistory {
     static let shared = CPUHistory()
     private let maxPoints = 2880 // 24h * 60min * 2 (30s)
     private let saveInterval = 30.0
-    
     private var dataPoints: [CPUDataPoint] = []
     private var timer: Timer?
+    private var buffer: [Double]
+    private var index=0
+    private let capacity=180
     
     init() {
+        buffer = Array(repeating: 0.0, count: capacity)
         loadHistory()
         startTimer()
     }
@@ -43,7 +46,8 @@ class CPUHistory {
         guard let cpuValue = Double(AppDelegate.shared.CPUUsage), cpuValue.isFinite else {
             return
         }
-        
+        buffer[index] = cpuValue
+        index=(index+1)%capacity
         let newPoint = CPUDataPoint(value: cpuValue)
         dataPoints.append(newPoint)
         if dataPoints.count > maxPoints {
@@ -70,33 +74,17 @@ class CPUHistory {
         return dataPoints
     }
     
-    func getLast24Hours() -> [CPUDataPoint] {
-        let now = Date()
-        let twentyFourHoursAgo = now.addingTimeInterval(-24 * 60 * 60)
-        return dataPoints.filter { $0.timestamp >= twentyFourHoursAgo }
-    }
-
-    func getLast6Hours() -> [CPUDataPoint] {
-        let now = Date()
-        let sixHoursAgo = now.addingTimeInterval(-6 * 60 * 60)
-        return dataPoints.filter { $0.timestamp >= sixHoursAgo }
+    func getLast30MinutesValues(is800PercentMode: Bool) -> [Double] {
+//        let now = Date()
+//        let thirtyMinutesAgo = now.addingTimeInterval(-1800)
+//        return dataPoints
+//            .filter { $0.timestamp >= thirtyMinutesAgo }
+//            .map { $0.value }
+        let scale = is800PercentMode ? 8.0 : 1.0
+        return buffer.map { $0 / scale }
     }
     
-    func getLast30Minutes() -> [CPUDataPoint] {
-        let now = Date()
-        let thirtyMinutesAgo = now.addingTimeInterval(-1800)
-        return dataPoints.filter { $0.timestamp >= thirtyMinutesAgo }
-    }
-    
-    func getLast30MinutesValues() -> [Double] {
-        let now = Date()
-        let thirtyMinutesAgo = now.addingTimeInterval(-1800)
-        return dataPoints
-            .filter { $0.timestamp >= thirtyMinutesAgo }
-            .map { $0.value }
-    }
-    
-    func getLastHourValues() -> [Double] {
+    func getLastHourValues(is800PercentMode: Bool) -> [Double] {
         let now = Date()
         let oneHourAgo = now.addingTimeInterval(-3600)
         return dataPoints
@@ -130,5 +118,12 @@ class CPUHistory {
         let sixHoursAgo = now.addingTimeInterval(-6 * 60 * 60)
         let filtered = dataPoints.filter { $0.timestamp >= sixHoursAgo }
         return getNormalizedValues(for: filtered, is800PercentMode: is800PercentMode)
+    }
+    
+    func getLast24Hours(is800PercentMode: Bool) -> [CPUDataPoint] {
+        let now = Date()
+        let twentyFourHoursAgo = now.addingTimeInterval(-24 * 60 * 60)
+        let filteres = dataPoints.filter { $0.timestamp >= twentyFourHoursAgo }
+        return getNormalizedValues(for: filteres, is800PercentMode: is800PercentMode)
     }
 }

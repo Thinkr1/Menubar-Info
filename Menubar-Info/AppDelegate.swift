@@ -32,6 +32,38 @@ enum PortOpeningMethod: String, CaseIterable {
     }
 }
 
+private struct RefreshIntervals {
+    static let cpuUsage: TimeInterval = 5
+    static let cpuDetails: TimeInterval = 3600
+    static let battery: TimeInterval = 30
+    static let memory: TimeInterval = 10
+    static let network: TimeInterval = 60
+    static let ipLocation: TimeInterval = 900
+}
+
+extension UserDefaults {
+    enum CacheKeys: String {
+        case cpuBrand
+        case cpuCores
+        case cpuThreads
+        case osVersion
+        case kernelVersion
+    }
+    
+    func cache<T>(_ value: T, forKey key: CacheKeys) where T: Codable {
+        if let encoded = try? JSONEncoder().encode(value) {
+            set(encoded, forKey: key.rawValue)
+        }
+    }
+    
+    func cached<T>(forKey key: CacheKeys) -> T? where T: Codable {
+        if let data = data(forKey: key.rawValue) {
+            return try? JSONDecoder().decode(T.self, from: data)
+        }
+        return nil
+    }
+}
+
 private extension AppDelegate {
     var progressViewHorizontalPadding: CGFloat { 12 }
     var cpuStatusItemWidth: CGFloat {
@@ -71,40 +103,227 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @AppStorage("batteryMenuTitleOption") var batteryMenuTitleOptionRawValue: String = BatteryMenuTitleOption.batteryPercentage.rawValue
     @AppStorage("customMenuButtons") var customMenuButtonsData: Data = Data()
     @Published var customMenuButtons: [CustomMenuButton] = []
-    @Published var CPUUsage: String = "..."
-    @Published var ip: String = ""
-    @Published var ipLoc: String = ""
-    @Published var batteryPct: String = "..."
-    @Published var batteryTime: String = ""
-    @Published var batteryCycleCount: String = "?"
-    @Published var batteryDesignCapacity: String = "?"
-    @Published var batteryCurrentCapacity: String = "?"
+    @Published var CPUUsage: String = "..." {
+        didSet {
+            if oldValue != CPUUsage {
+                updateCPUStatusItem()
+            }
+        }
+    }
+    @Published var ip: String = "" {
+        didSet {
+            if oldValue != ip {
+                updateIPStatusItem()
+            }
+        }
+    }
+    @Published var ipLoc: String = "" {
+        didSet {
+            if oldValue != ipLoc {
+                updateIPAndLoc()
+            }
+        }
+    }
+    @Published var batteryPct: String = "..." {
+        didSet {
+            if oldValue != batteryPct {
+                updateBatteryStatusItem()
+                updateBatteryProgressView()
+            }
+        }
+    }
+    @Published var batteryTime: String = "" {
+        didSet {
+            if oldValue != batteryPct {
+                updateBatteryStatusItem()
+            }
+        }
+    }
+    @Published var batteryCycleCount: String = "?" {
+        didSet {
+            if oldValue != batteryCycleCount {
+                updateBatteryStatusItem()
+            }
+        }
+    }
+    @Published var batteryDesignCapacity: String = "?" {
+        didSet {
+            if oldValue != batteryDesignCapacity {
+                updateBatteryStatusItem()
+            }
+        }
+    }
+    @Published var batteryCurrentCapacity: String = "?" {
+        didSet {
+            if oldValue != batteryCurrentCapacity {
+                updateBatteryStatusItem()
+            }
+        }
+    }
 //    @Published var batteryMaxCapacity: String = "?"
 //    @Published var batteryHealth: String = "?"
 //    @Published var batteryIsCharging: Bool = false
-    @Published var batteryTemperature: Double = 0.0
-    @Published var batteryCellVoltage: String = "?"
-    @Published var networkSSID: String = ""
-    @Published var networkDeviceCount: Int = 0
-    @Published var cpuBrand: String = "Unknown"
-    @Published var cpuCores: String = "?"
-    @Published var cpuThreads: String = "?"
-    @Published var cpuFrequency: String = "?"
-    @Published var cpuCacheL1: String = "?"
-    @Published var cpuCacheL2: String = "?"
-    @Published var cpuPctUser: String = "?"
-    @Published var cpuPctSys: String = "?"
-    @Published var cpuPctIdle: String = "?"
-    @Published var memoryTotal: String = "?"
-    @Published var memoryFreePercentage: String = "...%"
-    @Published var memoryPagesFree: String = "?"
-    @Published var memoryPagesPurgeable: String = "?"
-    @Published var memoryPagesActive: String = "?"
-    @Published var memoryPagesInactive: String = "?"
-    @Published var memoryPagesCompressed: String = "?"
-    @Published var memoryPageSize: Int = 0
-    @Published var memorySwapIns: String = "?"
-    @Published var memorySwapOuts: String = "?"
+    @Published var batteryTemperature: Double = 0.0 {
+        didSet {
+            if oldValue != batteryTemperature {
+                updateBatteryStatusItem()
+            }
+        }
+    }
+    @Published var batteryCellVoltage: String = "?" {
+        didSet {
+            if oldValue != batteryCellVoltage {
+                updateBatteryStatusItem()
+            }
+        }
+    }
+    @Published var networkSSID: String = "" {
+        didSet {
+            if oldValue != networkSSID {
+                updateNetworkDetails()
+            }
+        }
+    }
+    @Published var networkDeviceCount: Int = 0 {
+        didSet {
+            if oldValue != networkDeviceCount {
+                updateNetworkDetails()
+            }
+        }
+    }
+    @Published var cpuBrand: String = "Unknown" {
+        didSet {
+            if oldValue != cpuBrand {
+                updateCPUStatusItem()
+            }
+        }
+    }
+    @Published var cpuCores: String = "?" {
+        didSet {
+            if oldValue != cpuCores {
+                updateCPUStatusItem()
+            }
+        }
+    }
+    @Published var cpuThreads: String = "?" {
+        didSet {
+            if oldValue != cpuThreads {
+                updateCPUStatusItem()
+            }
+        }
+    }
+    @Published var cpuFrequency: String = "?" {
+        didSet {
+            if oldValue != cpuFrequency {
+                updateCPUStatusItem()
+            }
+        }
+    }
+    @Published var cpuCacheL1: String = "?" {
+        didSet {
+            if oldValue != cpuCacheL1 {
+                updateCPUStatusItem()
+            }
+        }
+    }
+    @Published var cpuCacheL2: String = "?" {
+        didSet {
+            if oldValue != cpuCacheL2 {
+                updateCPUStatusItem()
+            }
+        }
+    }
+    @Published var cpuPctUser: String = "?" {
+        didSet {
+            if oldValue != cpuPctUser {
+                updateCPUStatusItem()
+            }
+        }
+    }
+    @Published var cpuPctSys: String = "?" {
+        didSet {
+            if oldValue != cpuPctSys {
+                updateCPUStatusItem()
+            }
+        }
+    }
+    @Published var cpuPctIdle: String = "?" {
+        didSet {
+            if oldValue != cpuPctIdle {
+                updateCPUStatusItem()
+            }
+        }
+    }
+    @Published var memoryTotal: String = "?" {
+        didSet {
+            if oldValue != memoryTotal {
+                updateMemoryStatusItem()
+            }
+        }
+    }
+    @Published var memoryFreePercentage: String = "...%" {
+        didSet {
+            if oldValue != memoryFreePercentage {
+                updateMemoryStatusItem()
+            }
+        }
+    }
+    @Published var memoryPagesFree: String = "?" {
+        didSet {
+            if oldValue != memoryPagesFree {
+                updateMemoryStatusItem()
+            }
+        }
+    }
+    @Published var memoryPagesPurgeable: String = "?" {
+        didSet {
+            if oldValue != memoryPagesPurgeable {
+                updateMemoryStatusItem()
+            }
+        }
+    }
+    @Published var memoryPagesActive: String = "?" {
+        didSet {
+            if oldValue != memoryPagesActive {
+                updateMemoryStatusItem()
+            }
+        }
+    }
+    @Published var memoryPagesInactive: String = "?" {
+        didSet {
+            if oldValue != memoryPagesInactive {
+                updateMemoryStatusItem()
+            }
+        }
+    }
+    @Published var memoryPagesCompressed: String = "?" {
+        didSet {
+            if oldValue != memoryPagesCompressed {
+                updateMemoryStatusItem()
+            }
+        }
+    }
+    @Published var memoryPageSize: Int = 0 {
+        didSet {
+            if oldValue != memoryPageSize {
+                updateMemoryStatusItem()
+            }
+        }
+    }
+    @Published var memorySwapIns: String = "?" {
+        didSet {
+            if oldValue != memorySwapIns {
+                updateMemoryStatusItem()
+            }
+        }
+    }
+    @Published var memorySwapOuts: String = "?" {
+        didSet {
+            if oldValue != memorySwapOuts {
+                updateMemoryStatusItem()
+            }
+        }
+    }
     @Published var osVersion: String = "?"
     @Published var kernelVersion: String = "?"
     @Published var openPorts: [String] = []
@@ -122,11 +341,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var portsStatusItem: NSStatusItem?
     private var cpuTimer: Timer?
     private var memoryTimer: Timer?
+    private var cpuDetailsTimer: Timer?
+    private var networkTimer: Timer?
+    private var ipLocationTimer: Timer?
     private var cpuGraphPopover: NSPopover?
     private var customStatusItems: [UUID: NSStatusItem] = [:]
     private var customTimers: [UUID: Timer] = [:]
     static var shared: AppDelegate!
     let portManagerData = PortManagerData()
+    
+    private let operationQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.qualityOfService = .userInteractive
+        queue.maxConcurrentOperationCount = 4
+        return queue
+    }()
+    
+    private var lastCPUUpdateTime: Date = .distantPast
+    private var lastBatteryUpdateTime: Date = .distantPast
+    private var lastMemoryUpdateTime: Date = .distantPast
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppDelegate.shared=self
@@ -150,6 +383,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         cpuTimer?.invalidate()
         memoryTimer?.invalidate()
+        cpuDetailsTimer?.invalidate()
+        networkTimer?.invalidate()
+        ipLocationTimer?.invalidate()
     }
     
     private func setupStatusItems() {
@@ -169,7 +405,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func setupCPUStatusItem() {
         cpuStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-            updateCPUStatusItem()
+        updateCPUStatusItem()
             
         let button = cpuStatusItem?.button
         button?.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
@@ -1093,7 +1329,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 width: chartWidth,
                 height: 14
             ))
-            chartView.setValues(CPUHistory.shared.getLast30MinutesValues(), is800PercentMode: CPUPctMode == 0)
+            chartView.setValues(CPUHistory.shared.getLast30MinutesValues(is800PercentMode: CPUPctMode == 0), is800PercentMode: CPUPctMode == 0)
             chartView.color = .controlAccentColor
             containerView.addSubview(chartView)
         }
@@ -1265,25 +1501,38 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //    }
     
     private func updateCPUDetails() {
-        let brandCommand = "sysctl -n machdep.cpu.brand_string"
-        runCommand(brandCommand) { [weak self] result in
-            let cleaned = result.trimmingCharacters(in: .whitespacesAndNewlines)
-            DispatchQueue.main.async {
-                self?.cpuBrand = cleaned.isEmpty ? "Unknown" : cleaned
-            }
-        }
-
-        let coresCommand = "sysctl -n hw.perflevel0.physicalcpu"
-        runCommand(coresCommand) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.cpuCores = result.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let cachedBrand: String = UserDefaults.standard.cached(forKey: .cpuBrand) {
+                self.cpuBrand = cachedBrand
+        } else {
+            let brandCommand = "sysctl -n machdep.cpu.brand_string"
+            runCommand(brandCommand) { [weak self] result in
+                let cleaned = result.trimmingCharacters(in: .whitespacesAndNewlines)
+                DispatchQueue.main.async {
+                    self?.cpuBrand = cleaned.isEmpty ? "Unknown" : cleaned
+                    UserDefaults.standard.cache(self?.cpuBrand ?? "Unknown", forKey: .cpuBrand)
+                }
             }
         }
         
-        let threadsCommand = "sysctl -n hw.logicalcpu"
-        runCommand(threadsCommand) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.cpuThreads = result.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let cachedCores: String = UserDefaults.standard.cached(forKey: .cpuCores) {
+                self.cpuBrand = cachedCores
+        } else {
+            let coresCommand = "sysctl -n hw.perflevel0.physicalcpu"
+            runCommand(coresCommand) { [weak self] result in
+                DispatchQueue.main.async {
+                    self?.cpuCores = result.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            }
+        }
+        
+        if let cachedThreads: String = UserDefaults.standard.cached(forKey: .cpuThreads) {
+                self.cpuBrand = cachedThreads
+        } else {
+            let threadsCommand = "sysctl -n hw.logicalcpu"
+            runCommand(threadsCommand) { [weak self] result in
+                DispatchQueue.main.async {
+                    self?.cpuThreads = result.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
             }
         }
         
@@ -1305,19 +1554,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         
-        let osVersionCommand = "sw_vers -productVersion"
-        runCommand(osVersionCommand) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.osVersion = result.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let cachedOS: String = UserDefaults.standard.cached(forKey: .osVersion) {
+                self.cpuBrand = cachedOS
+        } else {
+            let osVersionCommand = "sw_vers -productVersion"
+            runCommand(osVersionCommand) { [weak self] result in
+                DispatchQueue.main.async {
+                    self?.osVersion = result.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
             }
         }
         
-        let kernelCommand = "sysctl -n kern.version"
-        runCommand(kernelCommand) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.kernelVersion = result.trimmingCharacters(in: .whitespacesAndNewlines)
-                    .components(separatedBy: ";").first?
-                    .trimmingCharacters(in: .whitespaces) ?? "Unknown"
+        if let cachedKernel: String = UserDefaults.standard.cached(forKey: .kernelVersion) {
+                self.cpuBrand = cachedKernel
+        } else {
+            let kernelCommand = "sysctl -n kern.version"
+            runCommand(kernelCommand) { [weak self] result in
+                DispatchQueue.main.async {
+                    self?.kernelVersion = result.trimmingCharacters(in: .whitespacesAndNewlines)
+                        .components(separatedBy: ";").first?
+                        .trimmingCharacters(in: .whitespaces) ?? "Unknown"
+                }
             }
         }
         
@@ -1569,49 +1826,85 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func updateIPAndLoc() {
+        guard networkMonitorWrapper.isReachable else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
+                self?.updateIPAndLoc()
+            }
+            return
+        }
+        
         let process = Process()
         let pipe = Pipe()
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = ["-c", "curl -s ip-api.com/json/$(curl -s ifconfig.me) | jq -r '.query + \" \" + .countryCode'"]
         process.standardOutput = pipe
         
-        do {
-            try process.run()
-        } catch {
-            print("Failed to run command: \(error)")
-            return
-        }
+        var retryCount = 0
+        let maxRetries = 3
         
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        
-        if let output = String(data: data, encoding: .utf8) {
-            let res = output.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: " ")
-            if res.count == 2 {
-                DispatchQueue.main.async {
-                    self.ip = String(res[0])
-                    self.ipLoc = String(res[1])
+        func attempt() {
+            do {
+                try process.run()
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                
+                if let output = String(data: data, encoding: .utf8) {
+                    let res = output.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: " ")
+                    if res.count == 2 {
+                        DispatchQueue.main.async {
+                            self.ip = String(res[0])
+                            self.ipLoc = String(res[1])
+                        }
+                        return
+                    }
+                }
+                
+                if retryCount < maxRetries {
+                    retryCount += 1
+                    let delay = pow(2.0, Double(retryCount)) // Exponential backoff
+                    DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                        attempt()
+                    }
+                }
+            } catch {
+                if retryCount < maxRetries {
+                    retryCount += 1
+                    let delay = pow(2.0, Double(retryCount))
+                    DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                        attempt()
+                    }
                 }
             }
         }
+        
+        attempt()
     }
     
     private func updateCPUUsage() {
-        let command = CPUPctMode == 0 ? "ps -A -o %cpu | awk '{s+=$1} END {print s}'" : "ps -A -o %cpu | awk '{s+=$1} END {printf \"%.1f\", s/8}'"
-        runCommand(command) { res in
-            let cleanedResult = res.trimmingCharacters(in: .whitespacesAndNewlines)
-            if let value = Double(cleanedResult), value.isFinite {
-                DispatchQueue.main.async {
-                    self.CPUUsage = cleanedResult
-                    CPUHistory.shared.saveCurrentCPUUsage()
-                    self.updateCPUStatusItem()
+        let now = Date()
+        guard now.timeIntervalSince(lastCPUUpdateTime) >= RefreshIntervals.cpuUsage else { return }
+        lastCPUUpdateTime = now
+        
+        let operation = BlockOperation { [weak self] in
+            let command = self?.CPUPctMode == 0 ? "ps -A -o %cpu | awk '{s+=$1} END {print s}'" : "ps -A -o %cpu | awk '{s+=$1} END {printf \"%.1f\", s/8}'"
+            self?.runCommand(command) { res in
+                let cleanedResult = res.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let value = Double(cleanedResult), value.isFinite {
+                    DispatchQueue.main.async {
+                        self?.CPUUsage = cleanedResult
+                        CPUHistory.shared.saveCurrentCPUUsage()
+                    }
                 }
-            } else {
-                print("Invalid CPU value received: \(res)")
             }
         }
+        operation.queuePriority = .high
+        operationQueue.addOperation(operation)
     }
     
     private func updateBatteryStatus() {
+        let now = Date()
+        guard now.timeIntervalSince(lastBatteryUpdateTime) >= RefreshIntervals.battery else { return }
+        lastBatteryUpdateTime = now
+        
         let batteryCommand = "ioreg -rn AppleSmartBattery"
         
         runCommand(batteryCommand) { [weak self] result in
@@ -1686,7 +1979,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func setupObservers() {
         setupCPUTimer()
+        setupCPUDetailsTimer()
         setupMemoryTimer()
+        setupNetworkTimer()
+        setupIPLocationTimer()
         $CPUUsage
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -1749,10 +2045,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &cancellables)
         
-        Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
-            self?.updateIPAndLoc()
-            self?.updateNetworkDetails()
-        }
+//        Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
+//            self?.updateIPAndLoc()
+//            self?.updateNetworkDetails()
+//        }
         
 //        Timer.scheduledTimer(withTimeInterval: 86400, repeats: true) { _ in
 //            AppUpdater.shared.checkForUpdates()
@@ -1771,10 +2067,40 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    private func setupCPUDetailsTimer() {
+        cpuDetailsTimer?.invalidate()
+        cpuDetailsTimer = Timer.scheduledTimer(
+            withTimeInterval: RefreshIntervals.cpuDetails,
+            repeats: true
+        ) { [weak self] _ in
+            self?.updateCPUDetails()
+        }
+    }
+    
     private func setupMemoryTimer() {
         memoryTimer?.invalidate()
         memoryTimer = Timer.scheduledTimer(withTimeInterval: memoryRefreshRate, repeats: true) { [weak self] _ in
             self?.updateMemoryDetails()
+        }
+    }
+    
+    private func setupNetworkTimer() {
+        networkTimer?.invalidate()
+        networkTimer = Timer.scheduledTimer(
+            withTimeInterval: RefreshIntervals.network,
+            repeats: true
+        ) { [weak self] _ in
+            self?.updateNetworkDetails()
+        }
+    }
+
+    private func setupIPLocationTimer() {
+        ipLocationTimer?.invalidate()
+        ipLocationTimer = Timer.scheduledTimer(
+            withTimeInterval: RefreshIntervals.ipLocation,
+            repeats: true
+        ) { [weak self] _ in
+            self?.updateIPAndLoc()
         }
     }
     
@@ -1838,6 +2164,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         updateCPUStatusItem()
         updateMemoryStatusItem()
+        setupCPUDetailsTimer()
+        setupNetworkTimer()
+        setupIPLocationTimer()
     }
     
     private func updateMenuItems() {
@@ -2404,24 +2733,57 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func runCommand(_ command: String, completion: @escaping (String) -> Void) {
-        let process = Process()
-        let pipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-c", command]
-        process.standardOutput = pipe
-        process.standardError = pipe
-        
-        do {
-            try process.run()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let output = String(data: data, encoding: .utf8) {
-                completion(output.trimmingCharacters(in: .whitespacesAndNewlines))
-            } else {
-                completion("No output")
+        let operation = BlockOperation { [weak self] in
+            let process = Process()
+            let pipe = Pipe()
+            process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+            process.arguments = ["-c", command]
+            process.standardOutput = pipe
+            process.standardError = pipe
+            
+            let outHandle = pipe.fileHandleForReading
+            outHandle.waitForDataInBackgroundAndNotify()
+            
+            var output = ""
+            var observer: NSObjectProtocol?
+            
+            observer = NotificationCenter.default.addObserver(
+                forName: .NSFileHandleDataAvailable,
+                object: outHandle,
+                queue: nil
+            ) { notification in
+                let data = outHandle.availableData
+                if data.count > 0 {
+                    if let str = String(data: data, encoding: .utf8) {
+                        output += str
+                    }
+                    outHandle.waitForDataInBackgroundAndNotify()
+                } else {
+                    if let observer = observer {
+                        NotificationCenter.default.removeObserver(observer)
+                    }
+                    completion(output)
+                }
             }
-        } catch {
-            print("Command failed: \(error)")
+            
+            process.terminationHandler = { _ in
+                if let observer = observer {
+                    NotificationCenter.default.removeObserver(observer)
+                }
+                if output.isEmpty {
+                    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                    output = String(data: data, encoding: .utf8) ?? "No output"
+                }
+                completion(output)
+            }
+            
+            do {
+                try process.run()
+            } catch {
+                completion("Command failed: \(error.localizedDescription)")
+            }
         }
+        operationQueue.addOperation(operation)
     }
     
     @objc private func showCPUHistoryGraph() {
