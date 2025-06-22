@@ -55,6 +55,29 @@ Then open it normally.
   <img width="461" alt="Security Settings Screenshot" src="https://github.com/user-attachments/assets/64336344-39dc-476f-87cd-6fc209e7122f" />
 </p>
 
+---
+
+### Verify File Integrity
+
+You can verify that your download hasn’t been tampered with by checking its SHA-256 checksum.
+
+1. Download the matching .sha256 file:
+
+From the release page, download:
+
+- Menubar-Info.dmg.sha256 if you downloaded the `.dmg`
+- Menubar-Info.zip.sha256 if you downloaded the `.zip`
+
+2. Verify the file integrity through the command line *(make sure the downloaded dmg or zip is in the same folder as the checksum)*:
+
+```sh
+# For the DMG
+shasum -a 256 -c Menubar-Info.dmg.sha256
+
+# For the ZIP
+shasum -a 256 -c Menubar-Info.zip.sha256
+```
+
 ## Contributions
 
 Pull requests are welcome! Whether it's a bug fix, feature suggestion, or just a cool idea—[open an issue](https://github.com/Thinkr1/Menubar-Info/issues) or submit a PR.
