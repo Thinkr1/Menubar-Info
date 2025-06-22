@@ -33,7 +33,7 @@
 
 ## Installation
 
-Download the app in **.zip** or **.dmg** format from the [latest release page »](https://github.com/Thinkr1/Menubar-Info/releases)
+Download the app in **.zip** or **.dmg** format from the [latest release page »](https://github.com/Thinkr1/Menubar-Info/releases/latest)
 
 > **Note**: The app is not notarized (yet) due to the lack of a paid Apple Developer account. macOS will show an alert when opening the app for the first time saying it cannot be opened directly. Here are two options to open it:
 
