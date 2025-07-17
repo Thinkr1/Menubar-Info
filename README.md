@@ -33,7 +33,7 @@
 
 ## Installation
 
-Download the app in **.zip** or **.dmg** format from the [latest release page »](https://github.com/Thinkr1/Menubar-Info/releases)
+Download the app in **.zip** or **.dmg** format from the [latest release page »](https://github.com/Thinkr1/Menubar-Info/releases/latest)
 
 > **Note**: The app is not notarized (yet) due to the lack of a paid Apple Developer account. macOS will show an alert when opening the app for the first time saying it cannot be opened directly. Here are two options to open it:
 
@@ -54,6 +54,29 @@ Then open it normally.
 <p align="center">
   <img width="461" alt="Security Settings Screenshot" src="https://github.com/user-attachments/assets/64336344-39dc-476f-87cd-6fc209e7122f" />
 </p>
+
+---
+
+### Verify File Integrity
+
+You can verify that your download hasn’t been tampered with by checking its SHA-256 checksum.
+
+1. Download the matching .sha256 file:
+
+From the release page, download:
+
+- Menubar-Info.dmg.sha256 if you downloaded the `.dmg`
+- Menubar-Info.zip.sha256 if you downloaded the `.zip`
+
+2. Verify the file integrity through the command line *(make sure the downloaded dmg or zip is in the same folder as the checksum)*:
+
+```sh
+# For the DMG
+shasum -a 256 -c Menubar-Info.dmg.sha256
+
+# For the ZIP
+shasum -a 256 -c Menubar-Info.zip.sha256
+```
 
 ## Contributions
 
