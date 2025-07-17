@@ -64,6 +64,17 @@ extension UserDefaults {
     }
 }
 
+extension Bundle {
+    public var appName: String { getInfo("CFBundleName")  }
+    public var copyright: String { getInfo("NSHumanReadableCopyright") }
+    
+    public var appBuild: String { getInfo("CFBundleVersion") }
+    public var appVersionLong: String { getInfo("CFBundleShortVersionString") }
+    //public var appVersionShort: String { getInfo("CFBundleShortVersion") }
+    
+    fileprivate func getInfo(_ str: String) -> String { infoDictionary?[str] as? String ?? "" }
+}
+
 private extension AppDelegate {
     var progressViewHorizontalPadding: CGFloat { 12 }
     var cpuStatusItemWidth: CGFloat {
@@ -347,6 +358,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var cpuGraphPopover: NSPopover?
     private var customStatusItems: [UUID: NSStatusItem] = [:]
     private var customTimers: [UUID: Timer] = [:]
+    private var aboutBoxWindowController: NSWindowController?
     static var shared: AppDelegate!
     let portManagerData = PortManagerData()
     
@@ -360,6 +372,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var lastCPUUpdateTime: Date = .distantPast
     private var lastBatteryUpdateTime: Date = .distantPast
     private var lastMemoryUpdateTime: Date = .distantPast
+    
+    @objc func showAboutWindow() {
+        if aboutBoxWindowController == nil {
+            let styleMask: NSWindow.StyleMask = [.closable, .miniaturizable,/* .resizable,*/ .titled]
+            let window = NSWindow()
+            window.styleMask = styleMask
+            window.title = "About \(Bundle.main.appName)"
+            window.contentView = NSHostingView(rootView: AboutView())
+            window.center()
+            aboutBoxWindowController = NSWindowController(window: window)
+        }
+        
+        aboutBoxWindowController?.showWindow(aboutBoxWindowController?.window)
+    }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppDelegate.shared=self
@@ -386,6 +412,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         cpuDetailsTimer?.invalidate()
         networkTimer?.invalidate()
         ipLocationTimer?.invalidate()
+    }
+    
+    private func addCommonMenuItems(to menu: NSMenu) {
+        if !menu.items.isEmpty && !menu.items.last!.isSeparatorItem {
+            menu.addItem(NSMenuItem.separator())
+        }
+        
+        let aboutItem = NSMenuItem(title: "About...", action: #selector(showAboutWindow), keyEquivalent: "")
+        aboutItem.target = self
+        menu.addItem(aboutItem)
+        
+        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+        
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
     }
     
     private func setupStatusItems() {
@@ -538,11 +582,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshCPU), keyEquivalent: "r")
         refreshItem.target = self
         
-        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
-        settingsItem.target = self
-        
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
+//        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
+//        settingsItem.target = self
+//        
+//        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
+//        quitItem.target = self
         
         menu.addItem(usageItem)
         menu.addItem(userItem)
@@ -562,12 +606,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(refreshItem)
         menu.addItem(showGraphItem)
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(settingsItem)
+//        menu.addItem(NSMenuItem.separator())
+//        menu.addItem(settingsItem)
         //        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
         //        updateItem.target = self
         //        menu.addItem(updateItem)
-        menu.addItem(quitItem)
+//        menu.addItem(quitItem)
+        addCommonMenuItems(to: menu)
         updateCPUProgressView()
         cpuStatusItem?.menu = menu
     }
@@ -639,11 +684,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshMemory), keyEquivalent: "r")
         refreshItem.target = self
         
-        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
-        settingsItem.target = self
-        
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
+//        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
+//        settingsItem.target = self
+//        
+//        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
+//        quitItem.target = self
         
         menu.addItem(freePctItem)
         menu.addItem(memoryProgressItem)
@@ -661,12 +706,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(swapOutsItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(refreshItem)
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(settingsItem)
+//        menu.addItem(NSMenuItem.separator())
+//        menu.addItem(settingsItem)
         //        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
         //        updateItem.target = self
         //        menu.addItem(updateItem)
-        menu.addItem(quitItem)
+//        menu.addItem(quitItem)
+        addCommonMenuItems(to: menu)
         updateMemoryProgressView()
         memoryStatusItem?.menu = menu
     }
@@ -714,19 +760,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         refreshItem.target = self
         menu.addItem(refreshItem)
         
-        menu.addItem(NSMenuItem.separator())
+//        menu.addItem(NSMenuItem.separator())
         
-        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
-        settingsItem.target = self
-        menu.addItem(settingsItem)
+//        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
+//        settingsItem.target = self
+//        menu.addItem(settingsItem)
         
         //        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
         //        updateItem.target = self
         //        menu.addItem(updateItem)
         
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
-        menu.addItem(quitItem)
+//        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
+//        quitItem.target = self
+//        menu.addItem(quitItem)
+        
+        addCommonMenuItems(to: menu)
         
         portsStatusItem?.menu = menu
         updatePortsMenu()
@@ -754,11 +802,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshIP), keyEquivalent: "r")
         refreshItem.target = self
         
-        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
-        settingsItem.target = self
-        
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
+//        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
+//        settingsItem.target = self
+//        
+//        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
+//        quitItem.target = self
         
         menu.addItem(ipItem)
         menu.addItem(networkItem)
@@ -772,10 +820,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menu.addItem(NSMenuItem.separator())
         menu.addItem(refreshItem)
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(settingsItem)
-        menu.addItem(quitItem)
-        
+//        menu.addItem(NSMenuItem.separator())
+//        menu.addItem(settingsItem)
+//        menu.addItem(quitItem)
+        addCommonMenuItems(to: menu)
         ipStatusItem?.menu = menu
     }
     
@@ -840,11 +888,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshBattery), keyEquivalent: "r")
         refreshItem.target = self
         
-        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
-        settingsItem.target = self
-        
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
+//        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
+//        settingsItem.target = self
+//        
+//        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
+//        quitItem.target = self
         
         menu.addItem(batteryItem)
         menu.addItem(batteryProgressItem)
@@ -861,12 +909,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(voltageItem)
         menu.addItem(refreshItem)
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(settingsItem)
+//        menu.addItem(NSMenuItem.separator())
+//        menu.addItem(settingsItem)
         //        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
         //        updateItem.target = self
         //        menu.addItem(updateItem)
-        menu.addItem(quitItem)
+//        menu.addItem(quitItem)
+        addCommonMenuItems(to: menu)
         updateBatteryProgressView()
         batteryStatusItem?.menu = menu
     }
@@ -920,14 +969,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             menuItem.representedObject = (item, button.id)
             menu.addItem(menuItem)
         }
-        menu.addItem(NSMenuItem.separator())
-        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
-        settingsItem.target = self
-        menu.addItem(settingsItem)
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
-        menu.addItem(quitItem)
+//        menu.addItem(NSMenuItem.separator())
+//        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
+//        settingsItem.target = self
+//        menu.addItem(settingsItem)
+//        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
+//        quitItem.target = self
+//        menu.addItem(quitItem)
         
+        addCommonMenuItems(to: menu)
         statusItem.menu = menu
         
         if let mainItem = button.items.first(where: { $0.showInMenuBar }) {
@@ -1297,6 +1347,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let refreshItem = NSMenuItem(title: "Refresh", action: #selector(refreshPorts), keyEquivalent: "r")
                 refreshItem.target = self
                 menu.addItem(refreshItem)
+            }
+            
+            if !standardItems.contains(where: { $0.action == #selector(showAboutWindow) }) {
+                let aboutItem = NSMenuItem(title: "About...", action: #selector(showAboutWindow), keyEquivalent: "")
+                aboutItem.target = self
+                menu.addItem(aboutItem)
             }
             
             if !standardItems.contains(where: { $0.action == #selector(openSettings) }) {
@@ -2390,13 +2446,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         menu.addItem(NSMenuItem.separator())
         
-        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
-        settingsItem.target = self
-        menu.addItem(settingsItem)
+//        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
+//        settingsItem.target = self
+//        menu.addItem(settingsItem)
+//        
+//        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
+//        quitItem.target = self
+//        menu.addItem(quitItem)
         
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
-        menu.addItem(quitItem)
+        addCommonMenuItems(to: menu)
     }
     
     private struct PortData {
@@ -2888,4 +2946,26 @@ class ProcessManager {
 
 class PortManagerData: ObservableObject {
     @Published var openPorts: [String] = []
+}
+
+struct AboutView: View {
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(nsImage: NSImage(named: "AppIcon")!)
+            
+            Text("\(Bundle.main.appName)")
+                .font(.system(size: 20, weight: .bold))
+                .textSelection(.enabled)
+            
+            Text("\(Bundle.main.appVersionLong) (\(Bundle.main.appBuild)) ")
+                .textSelection(.enabled)
+            
+            Text(Bundle.main.copyright)
+                .font(.system(size: 10, weight: .thin))
+                .multilineTextAlignment(.center)
+        }
+        .padding(20)
+        .frame(minWidth: 350, minHeight: 300)
+        .background(.regularMaterial)
+    }
 }
