@@ -35,6 +35,7 @@
               }
             }
           ],
+          "hidden" : false,
           "image-name" : "cpu.svg",
           "name" : "cpu",
           "position" : {
