@@ -2771,24 +2771,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    private func createSettingsPanel() -> NSPanel {
+    private func createSettingsPanel() -> NSWindow {
         if let panel = settingsPanel {
             panel.makeKeyAndOrderFront(nil)
             return panel
         }
         
-        let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 700),
-            styleMask: [.titled, .closable, .utilityWindow],
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 880, height: 640),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         
-        panel.isFloatingPanel = true
-        panel.level = .floating
-        panel.hidesOnDeactivate = false
-        panel.isReleasedWhenClosed = false
-        panel.title = "Settings"
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+//        window.isMovableByWindowBackground = true
+        
+        window.level = .floating
+        window.hidesOnDeactivate = false
+        window.isReleasedWhenClosed = false
+        
+        let toolbar = NSToolbar(identifier: "SettingsToolbar")
+        toolbar.showsBaselineSeparator = false
+        window.toolbar = toolbar
         
         let settingsView = SettingsView(
             CPURefreshRate: $CPURefreshRate,
@@ -2804,12 +2810,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             batteryMenuTitleOption: $batteryMenuTitleOptionRawValue,
             customMenuButtons: $customMenuButtonsData
         )
+        window.contentView = NSHostingView(rootView: settingsView)
         
-        panel.contentView = NSHostingView(rootView: settingsView)
-        panel.center()
+        window.center()
+        window.makeKeyAndOrderFront(nil)
         
-        settingsPanel = panel
-        return panel
+        settingsPanel = window as? NSPanel
+        return window
     }
     
     private func runCommand(_ command: String, completion: @escaping (String) -> Void) {

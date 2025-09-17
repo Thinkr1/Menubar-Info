@@ -9,7 +9,6 @@ import SwiftUI
 import AppKit
 import Combine
 import Network
-import Charts
 
 extension Binding where Value == String {
     init<T: LosslessStringConvertible>(_ source: Binding<T>) {
@@ -43,10 +42,9 @@ struct SettingsView: View {
         case temperature = "Temperature"
         case cycleCount = "Cycle Count"
         case currentCapacity = "Current Capacity"
-        
         var id: String { self.rawValue }
     }
-    
+
     @State private var localCPURefreshRate: TimeInterval
     @State private var localMemoryRefreshRate: TimeInterval
     @State private var localCPUPctMode: Int
@@ -68,19 +66,8 @@ struct SettingsView: View {
     @State private var newItemRefreshInterval: TimeInterval = 5
     @State private var newItemOutputFormat = ""
     @State private var newItemShowInMenuBar = false
-    
-    private var customMenuButtonsBinding: Binding<[CustomMenuButton]> {
-        Binding(
-            get: { decodedCustomMenuButtons },
-            set: {
-                decodedCustomMenuButtons = $0
-                if let encoded = try? JSONEncoder().encode($0) {
-                    customMenuButtons.wrappedValue = encoded
-                }
-            }
-        )
-    }
-
+    @State private var selection: Pane = .general
+    enum Pane: Hashable { case general, battery, custom }
     private let CPURefreshRateBinding: Binding<TimeInterval>
     private let memoryRefreshRateBinding: Binding<TimeInterval>
     private let cpupctModeBinding: Binding<Int>
@@ -93,7 +80,19 @@ struct SettingsView: View {
     private let memoryDisplayModeBinding: Binding<Int>
     private let batteryMenuTitleOptionBinding: Binding<String>
     private let customMenuButtons: Binding<Data>
-    
+
+    private var customMenuButtonsBinding: Binding<[CustomMenuButton]> {
+        Binding(
+            get: { decodedCustomMenuButtons },
+            set: {
+                decodedCustomMenuButtons = $0
+                if let encoded = try? JSONEncoder().encode($0) {
+                    customMenuButtons.wrappedValue = encoded
+                }
+            }
+        )
+    }
+
     init(CPURefreshRate: Binding<TimeInterval>,
          memoryRefreshRate: Binding<TimeInterval>,
          CPUPctMode: Binding<Int>,
@@ -106,7 +105,6 @@ struct SettingsView: View {
          memoryDisplayMode: Binding<Int>,
          batteryMenuTitleOption: Binding<String>,
          customMenuButtons: Binding<Data>) {
-        
         self.CPURefreshRateBinding = CPURefreshRate
         self.memoryRefreshRateBinding = memoryRefreshRate
         self.cpupctModeBinding = CPUPctMode
@@ -119,7 +117,7 @@ struct SettingsView: View {
         self.memoryDisplayModeBinding = memoryDisplayMode
         self.batteryMenuTitleOptionBinding = batteryMenuTitleOption
         self.customMenuButtons = customMenuButtons
-        
+
         _localCPURefreshRate = State(initialValue: CPURefreshRate.wrappedValue)
         _localMemoryRefreshRate = State(initialValue: memoryRefreshRate.wrappedValue)
         _localCPUPctMode = State(initialValue: CPUPctMode.wrappedValue)
@@ -131,7 +129,7 @@ struct SettingsView: View {
         _localCPUDisplayStyle = State(initialValue: cpuDisplayStyle.wrappedValue)
         _localMemoryDisplayMode = State(initialValue: memoryDisplayMode.wrappedValue)
         _localBatteryMenuTitleOption = State(initialValue: BatteryMenuTitleOption(rawValue: batteryMenuTitleOption.wrappedValue) ?? .batteryPercentage)
-        
+
         let data = customMenuButtons.wrappedValue
         if let decoded = try? JSONDecoder().decode([CustomMenuButton].self, from: data) {
             _decodedCustomMenuButtons = State(initialValue: decoded)
@@ -139,7 +137,7 @@ struct SettingsView: View {
             _decodedCustomMenuButtons = State(initialValue: [])
         }
     }
-    
+
     private var CPUPctModeBinding: Binding<Bool> {
         Binding(
             get: { self.localCPUPctMode == 1 },
@@ -150,205 +148,362 @@ struct SettingsView: View {
             }
         )
     }
-    
+
     var body: some View {
+        Group {
+            if #available(macOS 14.0, *) {
+                if #available(macOS 26.0, *) {
+                    liquidGlassLayout
+                } else {
+                    legacyLayout
+                }
+            } else {
+                legacyLayout
+            }
+        }
+        .onAppear{syncFromBindings()}
+    }
+
+    @available(macOS 26.0, *)
+    private var liquidGlassLayout: some View {
+        NavigationSplitView {
+            sidebar
+                .navigationSplitViewColumnWidth(min: 220, ideal: 240, max: 280)
+        } detail: {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    switch selection {
+                    case .general: generalPane
+                    case .battery: batteryPane
+                    case .custom: customPane
+                    }
+                }
+                .padding(20)
+            }
+            .navigationTitle(titleFor(selection))
+//            .toolbar {
+//                ToolbarItem(placement: .automatic) {
+//                    Button("Close") { NSApplication.shared.keyWindow?.orderOut(nil) }
+//                        .keyboardShortcut(.cancelAction)
+//                }
+//            }
+        }
+        .frame(minWidth: 850, idealWidth: 880, minHeight: 520, idealHeight: 640)
+        .navigationSplitViewStyle(.balanced)
+        .toolbar(.hidden)
+    }
+
+    @available(macOS 26.0, *)
+    private var sidebar: some View {
+        List(selection: $selection) {
+            Section("Settings") {
+                Label("General", systemImage: "slider.horizontal.3").tag(Pane.general)
+                Label("Battery", systemImage: "battery.100").tag(Pane.battery)
+                Label("Custom Buttons", systemImage: "rectangle.3.group").tag(Pane.custom)
+            }
+        }
+        .listStyle(.sidebar)
+    }
+
+    @available(macOS 26.0, *)
+    private func titleFor(_ pane: Pane) -> String {
+        switch pane {
+        case .general: return "General"
+        case .battery: return "Battery"
+        case .custom: return "Custom Buttons"
+        }
+    }
+
+    @available(macOS 26.0, *)
+    private var generalPane: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            glassSection(title: "Menu Bar Items") {
+                HStack(spacing: 16) {
+                    glassCheckbox(title: "CPU", isOn: Binding(get: { self.localCPUMBESelect }, set: { updateMenuToggle(&localCPUMBESelect, new: $0, binding: cpuMBESelectBinding) }))
+                    glassCheckbox(title: "IP", isOn: Binding(get: { self.localIPMBESelect }, set: { updateMenuToggle(&localIPMBESelect, new: $0, binding: ipMBESelectBinding) }))
+                    glassCheckbox(title: "Battery", isOn: Binding(get: { self.localBatteryMBESelect }, set: { updateMenuToggle(&localBatteryMBESelect, new: $0, binding: batteryMBESelectBinding) }))
+                    glassCheckbox(title: "Memory", isOn: Binding(get: { self.localMemoryMBESelect }, set: { updateMenuToggle(&localMemoryMBESelect, new: $0, binding: memoryMBESelectBinding) }))
+                    glassCheckbox(title: "Ports", isOn: Binding(get: { self.localPortsMBESelect }, set: { updateMenuToggle(&localPortsMBESelect, new: $0, binding: portsMBESelectBinding) }))
+                }
+            }
+
+            glassSection(title: "Refresh Rates") {
+                LabeledContent("CPU Refresh Rate") {
+                    HStack(spacing: 10) {
+                        Text("\(Int(localCPURefreshRate))s").monospacedDigit()
+                            .foregroundStyle(.secondary)
+                            .frame(width: 40, alignment: .trailing)
+                        Slider(value: Binding(get: { self.localCPURefreshRate }, set: { self.localCPURefreshRate = $0; CPURefreshRateBinding.wrappedValue = $0; UserDefaults.standard.synchronize() }), in: 1...60, step: 1)
+                    }
+                }
+                LabeledContent("Memory Refresh Rate") {
+                    HStack(spacing: 10) {
+                        Text("\(Int(localMemoryRefreshRate))s").monospacedDigit()
+                            .foregroundStyle(.secondary)
+                            .frame(width: 40, alignment: .trailing)
+                        Slider(value: Binding(get: { self.localMemoryRefreshRate }, set: { self.localMemoryRefreshRate = $0; memoryRefreshRateBinding.wrappedValue = $0; UserDefaults.standard.synchronize() }), in: 1...60, step: 1)
+                    }
+                }
+            }
+
+            glassSection(title: "CPU Display") {
+                Picker("Display Mode", selection: Binding(get: { self.localCPUDisplayStyle }, set: { self.localCPUDisplayStyle = $0; cpuDisplayStyle.wrappedValue = $0; UserDefaults.standard.synchronize() })) {
+                    Text("CPU Usage Only").tag(0)
+                    Text("CPU Usage Graph Only").tag(1)
+                    Text("Both").tag(2)
+                }
+                .pickerStyle(.segmented)
+
+                HStack {
+                    Text("CPU Percentage Mode: 800%")
+                    Toggle("", isOn: CPUPctModeBinding).toggleStyle(.switch)
+                    Text("100%")
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            }
+
+            glassSection(title: "Memory Display") {
+                Picker("Mode", selection: Binding(get: { self.localMemoryDisplayMode }, set: { self.localMemoryDisplayMode = $0; memoryDisplayModeBinding.wrappedValue = $0; UserDefaults.standard.synchronize() })) {
+                    Text("Memory Free").tag(0)
+                    Text("Memory Used").tag(1)
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+    }
+
+    @available(macOS 26.0, *)
+    private var batteryPane: some View {
+        glassSection(title: "Battery Menu Title") {
+            Picker("Title", selection: Binding(get: { self.localBatteryMenuTitleOption }, set: { self.localBatteryMenuTitleOption = $0; batteryMenuTitleOptionBinding.wrappedValue = $0.rawValue; UserDefaults.standard.synchronize() })) {
+                ForEach(BatteryMenuTitleOption.allCases) { option in
+                    Text(option.rawValue).tag(option)
+                }
+            }
+            .pickerStyle(.menu)
+        }
+    }
+
+    @available(macOS 26.0, *)
+    private var customPane: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            glassSection(title: "Custom Menu Bar Buttons") {
+                List {
+                    ForEach(customMenuButtonsBinding) { $button in
+                        DisclosureGroup(isExpanded: Binding(get: { selectedButtonId == button.id }, set: { if $0 { selectedButtonId = button.id } else { selectedButtonId = nil } })) {
+                            ForEach($button.items) { $item in
+                                HStack(alignment: .firstTextBaseline) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.title)
+                                        Text(item.command).font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if item.showInMenuBar { Image(systemName: "menubar.arrow.up.rectangle") }
+                                }
+                                .contextMenu {
+                                    Button("Edit") { editItem(item) }
+                                    Button("Delete") { deleteItem(item, from: button) }
+                                }
+                            }
+                            Button("Add Item") {
+                                newItemTitle = ""
+                                newItemCommand = ""
+                                newItemRefreshInterval = 5
+                                newItemOutputFormat = ""
+                                newItemShowInMenuBar = false
+                                selectedButtonId = button.id
+                                showingAddItemSheet = true
+                            }
+                        } label: {
+                            HStack(spacing: 10) {
+                                Toggle("", isOn: $button.isVisible)
+                                TextField("Button Title", text: $button.title)
+                            }
+                        }
+                        .contextMenu { Button("Delete") { deleteButton(button) } }
+                    }
+                }
+                .frame(minHeight: 220, idealHeight: 260)
+
+                HStack {
+                    Spacer()
+                    Button {
+                        newButtonTitle = ""
+                        showingAddButtonSheet = true
+                    } label: {
+                        Label("Add New Button", systemImage: "plus.circle.fill")
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingAddButtonSheet) { addButtonSheet }
+        .sheet(isPresented: $showingAddItemSheet) { addItemSheet }
+    }
+
+    @available(macOS 14.0, *)
+    private func glassSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(.primary)
+            VStack(alignment: .leading, spacing: 12) { content() }
+                .padding(16)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(.white.opacity(0.12), lineWidth: 1))
+        }
+    }
+
+    @available(macOS 14.0, *)
+    private func glassCheckbox(title: String, isOn: Binding<Bool>) -> some View {
+        Toggle(title, isOn: isOn)
+            .toggleStyle(.checkbox)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().stroke(.white.opacity(0.15), lineWidth: 1))
+    }
+
+    @available(macOS 14.0, *)
+    private var addButtonSheet: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Add New Menu Bar Button").font(.headline)
+            TextField("Button Title", text: $newButtonTitle)
+            HStack {
+                Spacer()
+                Button("Cancel") { showingAddButtonSheet = false }
+                Button("Add") {
+                    let newButton = CustomMenuButton(title: newButtonTitle, items: [], isVisible: true)
+                    decodedCustomMenuButtons.append(newButton)
+                    saveCustomButtons()
+                    showingAddButtonSheet = false
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding()
+        .frame(width: 340)
+        .background(.thinMaterial)
+    }
+
+    @available(macOS 14.0, *)
+    private var addItemSheet: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Add New Menu Item").font(.headline)
+            TextField("Item Title", text: $newItemTitle)
+            TextField("Command", text: $newItemCommand)
+            HStack {
+                Text("Refresh Interval (seconds):")
+                TextField("", value: $newItemRefreshInterval, formatter: NumberFormatter())
+                    .frame(width: 60)
+            }
+            TextField("Output Format (use {output})", text: $newItemOutputFormat)
+            Toggle("Show in Menu Bar", isOn: $newItemShowInMenuBar)
+            HStack {
+                Spacer()
+                Button("Cancel") { showingAddItemSheet = false }
+                Button("Add") {
+                    guard let selectedId = selectedButtonId else { return }
+                    if let buttonIndex = decodedCustomMenuButtons.firstIndex(where: { $0.id == selectedId }) {
+                        let newItem = CustomMenuItem(
+                            title: newItemTitle,
+                            command: newItemCommand,
+                            refreshInterval: newItemRefreshInterval > 0 ? newItemRefreshInterval : nil,
+                            outputFormat: newItemOutputFormat.isEmpty ? nil : newItemOutputFormat,
+                            showInMenuBar: newItemShowInMenuBar
+                        )
+                        decodedCustomMenuButtons[buttonIndex].items.append(newItem)
+                        saveCustomButtons()
+                    }
+                    showingAddItemSheet = false
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding()
+        .frame(width: 420)
+        .background(.thinMaterial)
+    }
+
+    private var legacyLayout: some View {
         VStack {
             HStack {
                 Text("Show in Menu Bar: ")
                     .padding()
                 if #available(macOS 14.0, *) {
-                    Toggle("CPU", isOn: Binding(
-                        get: { self.localCPUMBESelect },
-                        set: { newValue in
-                            self.localCPUMBESelect = newValue
-                            self.cpuMBESelectBinding.wrappedValue = newValue
-                            UserDefaults.standard.synchronize()
-                            if !self.localIPMBESelect && !newValue && !self.localBatteryMBESelect && !localMemoryMBESelect && !localPortsMBESelect {
-                                self.localCPUMBESelect = true
-                                self.cpuMBESelectBinding.wrappedValue = true
-                            }
-                        }
-                    ))
-                    .toggleStyle(.checkbox)
-                    Toggle("IP", isOn: Binding(
-                        get: { self.localIPMBESelect },
-                        set: { newValue in
-                            self.localIPMBESelect = newValue
-                            self.ipMBESelectBinding.wrappedValue = newValue
-                            UserDefaults.standard.synchronize()
-                            if !self.localCPUMBESelect && !newValue && !self.localBatteryMBESelect && !localMemoryMBESelect && !localPortsMBESelect {
-                                self.localIPMBESelect = true
-                                self.ipMBESelectBinding.wrappedValue = true
-                            }
-                        }
-                    ))
-                    .toggleStyle(.checkbox)
-                    Toggle("Battery", isOn: Binding(
-                        get: { self.localBatteryMBESelect },
-                        set: { newValue in
-                            self.localBatteryMBESelect = newValue
-                            self.batteryMBESelectBinding.wrappedValue = newValue
-                            UserDefaults.standard.synchronize()
-                            if !self.localIPMBESelect && !newValue && !self.localCPUMBESelect && !localMemoryMBESelect && !localPortsMBESelect {
-                                self.localBatteryMBESelect = true
-                                self.batteryMBESelectBinding.wrappedValue = true
-                            }
-                        }
-                    ))
-                    .toggleStyle(.checkbox)
-                    Toggle("Memory", isOn: Binding(
-                        get: { self.localMemoryMBESelect },
-                        set: { newValue in
-                            self.localMemoryMBESelect = newValue
-                            self.memoryMBESelectBinding.wrappedValue = newValue
-                            UserDefaults.standard.synchronize()
-                            if !self.localIPMBESelect && !newValue && !self.localCPUMBESelect && !localBatteryMBESelect && !localPortsMBESelect {
-                                self.localMemoryMBESelect = true
-                                self.memoryMBESelectBinding.wrappedValue = true
-                            }
-                        }
-                    ))
-                    .toggleStyle(.checkbox)
-                    Toggle("Ports", isOn: Binding(
-                        get: { self.localPortsMBESelect },
-                        set: { newValue in
-                            self.localPortsMBESelect = newValue
-                            self.portsMBESelectBinding.wrappedValue = newValue
-                            UserDefaults.standard.synchronize()
-                            if !self.localIPMBESelect && !newValue && !self.localCPUMBESelect && !localBatteryMBESelect && !localMemoryMBESelect {
-                                self.localPortsMBESelect = true
-                                self.portsMBESelectBinding.wrappedValue = true
-                            }
-                        }
-                    ))
-                    .toggleStyle(.checkbox)
+                    Toggle("CPU", isOn: Binding(get: { self.localCPUMBESelect }, set: { updateMenuToggle(&localCPUMBESelect, new: $0, binding: cpuMBESelectBinding) }))
+                        .toggleStyle(.checkbox)
+                    Toggle("IP", isOn: Binding(get: { self.localIPMBESelect }, set: { updateMenuToggle(&localIPMBESelect, new: $0, binding: ipMBESelectBinding) }))
+                        .toggleStyle(.checkbox)
+                    Toggle("Battery", isOn: Binding(get: { self.localBatteryMBESelect }, set: { updateMenuToggle(&localBatteryMBESelect, new: $0, binding: batteryMBESelectBinding) }))
+                        .toggleStyle(.checkbox)
+                    Toggle("Memory", isOn: Binding(get: { self.localMemoryMBESelect }, set: { updateMenuToggle(&localMemoryMBESelect, new: $0, binding: memoryMBESelectBinding) }))
+                        .toggleStyle(.checkbox)
+                    Toggle("Ports", isOn: Binding(get: { self.localPortsMBESelect }, set: { updateMenuToggle(&localPortsMBESelect, new: $0, binding: portsMBESelectBinding) }))
+                        .toggleStyle(.checkbox)
                 }
             }.accessibilityIdentifier("ShowInMenuBarToggle").padding()
-            
-            Slider(value: Binding(
-                get: { self.localCPURefreshRate },
-                set: { newValue in
-                    self.localCPURefreshRate = newValue
-                    self.CPURefreshRateBinding.wrappedValue = newValue
-                    UserDefaults.standard.synchronize()
-                }
-            ), in: 1...60, step: 1) {
+
+            Slider(value: Binding(get: { self.localCPURefreshRate }, set: { self.localCPURefreshRate = $0; CPURefreshRateBinding.wrappedValue = $0; UserDefaults.standard.synchronize() }), in: 1...60, step: 1) {
                 Text("CPU Refresh Rate: \(Int(localCPURefreshRate)) seconds")
-            } minimumValueLabel: {
-                Text("1")
-            } maximumValueLabel: {
-                Text("60")
-            }
+            } minimumValueLabel: { Text("1") } maximumValueLabel: { Text("60") }
             .padding()
-            
-            Slider(value: Binding(
-                get: { self.localMemoryRefreshRate },
-                set: { newValue in
-                    self.localMemoryRefreshRate = newValue
-                    self.memoryRefreshRateBinding.wrappedValue = newValue
-                    UserDefaults.standard.synchronize()
-                }
-            ), in: 1...60, step: 1) {
+
+            Slider(value: Binding(get: { self.localMemoryRefreshRate }, set: { self.localMemoryRefreshRate = $0; memoryRefreshRateBinding.wrappedValue = $0; UserDefaults.standard.synchronize() }), in: 1...60, step: 1) {
                 Text("Memory Refresh Rate: \(Int(localMemoryRefreshRate)) seconds")
-            } minimumValueLabel: {
-                Text("1")
-            } maximumValueLabel: {
-                Text("60")
-            }
+            } minimumValueLabel: { Text("1") } maximumValueLabel: { Text("60") }
             .padding()
-            
-            Picker(selection: Binding(
-                get: { self.localCPUDisplayStyle },
-                set: { newValue in
-                    self.localCPUDisplayStyle = newValue
-                    self.cpuDisplayStyle.wrappedValue = newValue
-                    UserDefaults.standard.synchronize()
-                }
-            ), label: Text("CPU Menu Item Display Mode")) {
+
+            Picker(selection: Binding(get: { self.localCPUDisplayStyle }, set: { self.localCPUDisplayStyle = $0; cpuDisplayStyle.wrappedValue = $0; UserDefaults.standard.synchronize() }), label: Text("CPU Menu Item Display Mode")) {
                 Text("CPU Usage Only").tag(0)
                 Text("CPU Usage Graph Only").tag(1)
                 Text("Both").tag(2)
             }
             .pickerStyle(.radioGroup)
             .horizontalRadioGroupLayout()
-            
-            Picker(selection: Binding(
-                get: { self.localMemoryDisplayMode },
-                set: { newValue in
-                    self.localMemoryDisplayMode = newValue
-                    self.memoryDisplayModeBinding.wrappedValue = newValue
-                    UserDefaults.standard.synchronize()
-                }
-            ), label: Text("Memory Display Mode")) {
+
+            Picker(selection: Binding(get: { self.localMemoryDisplayMode }, set: { self.localMemoryDisplayMode = $0; memoryDisplayModeBinding.wrappedValue = $0; UserDefaults.standard.synchronize() }), label: Text("Memory Display Mode")) {
                 Text("Memory Free").tag(0)
                 Text("Memory Used").tag(1)
             }
             .pickerStyle(.radioGroup)
             .horizontalRadioGroupLayout()
             .padding()
-            
-            Picker(selection: Binding(
-                get: { self.localBatteryMenuTitleOption },
-                set: { newValue in
-                    self.localBatteryMenuTitleOption = newValue
-                    self.batteryMenuTitleOptionBinding.wrappedValue = newValue.rawValue
-                    UserDefaults.standard.synchronize()
-                }
-            ), label: Text("Battery Menu Item Title")) {
+
+            Picker(selection: Binding(get: { self.localBatteryMenuTitleOption }, set: { self.localBatteryMenuTitleOption = $0; batteryMenuTitleOptionBinding.wrappedValue = $0.rawValue; UserDefaults.standard.synchronize() }), label: Text("Battery Menu Item Title")) {
                 ForEach(BatteryMenuTitleOption.allCases) { option in
                     Text(option.rawValue).tag(option)
                 }
             }
             .pickerStyle(.menu)
             .padding()
-            
+
             HStack {
                 Text("CPU Percentage Mode: 800%")
-                Toggle("", isOn: CPUPctModeBinding)
-                    .toggleStyle(.switch)
+                Toggle("", isOn: CPUPctModeBinding).toggleStyle(.switch)
                 Text("100%")
             }.accessibilityIdentifier("CPUPctModeToggle").padding()
-            
-            customButtonSettings()
-            
-            Button("Close") {
-                NSApplication.shared.keyWindow?.orderOut(nil)
-            }.accessibilityIdentifier("CloseSettingsButton").padding()
-        }
-        .onAppear {
-            self.localCPURefreshRate = self.CPURefreshRateBinding.wrappedValue
-            self.localCPUPctMode = self.cpupctModeBinding.wrappedValue
-            self.localCPUMBESelect = self.cpuMBESelectBinding.wrappedValue
-            self.localIPMBESelect = self.ipMBESelectBinding.wrappedValue
-            self.localBatteryMBESelect = self.batteryMBESelectBinding.wrappedValue
-            self.localMemoryMBESelect = self.memoryMBESelectBinding.wrappedValue
-            self.localPortsMBESelect = self.portsMBESelectBinding.wrappedValue
-            self.localCPUDisplayStyle = self.cpuDisplayStyle.wrappedValue
-            self.localMemoryDisplayMode = self.memoryDisplayModeBinding.wrappedValue
-            self.localBatteryMenuTitleOption = BatteryMenuTitleOption(rawValue: self.batteryMenuTitleOptionBinding.wrappedValue) ?? .batteryPercentage
+
+            legacyCustomButtonSettings()
+
+//            Button("Close") { NSApplication.shared.keyWindow?.orderOut(nil) }
+//                .accessibilityIdentifier("CloseSettingsButton").padding()
         }
     }
-    
+
     @ViewBuilder
-    private func customButtonSettings() -> some View {
+    private func legacyCustomButtonSettings() -> some View {
         Section(header: Text("Custom Menu Bar Buttons").font(.headline)) {
             List {
                 ForEach(customMenuButtonsBinding) { $button in
-                    DisclosureGroup(isExpanded: Binding(
-                        get: { selectedButtonId == button.id },
-                        set: { if $0 { selectedButtonId = button.id } else { selectedButtonId = nil } }
-                    )) {
+                    DisclosureGroup(isExpanded: Binding(get: { selectedButtonId == button.id }, set: { if $0 { selectedButtonId = button.id } else { selectedButtonId = nil } })) {
                         ForEach($button.items) { $item in
                             VStack(alignment: .leading) {
                                 HStack {
                                     Text(item.title)
                                     Spacer()
-                                    Text(item.command)
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                    if item.showInMenuBar {
-                                        Image(systemName: "menubar.arrow.up.rectangle")
-                                    }
+                                    Text(item.command).font(.caption).foregroundColor(.gray)
+                                    if item.showInMenuBar { Image(systemName: "menubar.arrow.up.rectangle") }
                                 }
                             }
                             .contextMenu {
@@ -356,92 +511,47 @@ struct SettingsView: View {
                                 Button("Delete") { deleteItem(item, from: button) }
                             }
                         }
-                        
                         Button("Add Item") {
-                            newItemTitle = ""
-                            newItemCommand = ""
-                            newItemRefreshInterval = 5
-                            newItemOutputFormat = ""
-                            newItemShowInMenuBar = false
+                            newItemTitle = ""; newItemCommand = ""; newItemRefreshInterval = 5; newItemOutputFormat = ""; newItemShowInMenuBar = false
                             selectedButtonId = button.id
                             showingAddItemSheet = true
                         }
                     } label: {
-                        HStack {
-                            Toggle("", isOn: $button.isVisible)
-                            TextField("Button Title", text: $button.title)
-                        }
+                        HStack { Toggle("", isOn: $button.isVisible); TextField("Button Title", text: $button.title) }
                     }
-                    .contextMenu {
-                        Button("Delete") { deleteButton(button) }
-                    }
+                    .contextMenu { Button("Delete") { deleteButton(button) } }
                 }
             }
             .frame(height: 200)
-            
-            Button("Add New Button") {
-                newButtonTitle = ""
-                showingAddButtonSheet = true
-            }
+            Button("Add New Button") { newButtonTitle = ""; showingAddButtonSheet = true }
         }
-        .sheet(isPresented: $showingAddButtonSheet) {
-            VStack {
-                Text("Add New Menu Bar Button").font(.headline)
-                TextField("Button Title", text: $newButtonTitle)
-                HStack {
-                    Button("Cancel") { showingAddButtonSheet = false }
-                    Button("Add") {
-                        let newButton = CustomMenuButton(
-                            title: newButtonTitle,
-                            items: [],
-                            isVisible: true
-                        )
-                        decodedCustomMenuButtons.append(newButton)
-                        saveCustomButtons()
-                        showingAddButtonSheet = false
-                    }
-                }
-            }
-            .padding()
-            .frame(width: 300)
-        }
-        .sheet(isPresented: $showingAddItemSheet) {
-            VStack {
-                Text("Add New Menu Item").font(.headline)
-                TextField("Item Title", text: $newItemTitle)
-                TextField("Command", text: $newItemCommand)
-                HStack {
-                    Text("Refresh Interval (seconds):")
-                    TextField("", value: $newItemRefreshInterval, formatter: NumberFormatter())
-                        .frame(width: 50)
-                }
-                TextField("Output Format (use {output})", text: $newItemOutputFormat)
-                Toggle("Show in Menu Bar", isOn: $newItemShowInMenuBar)
-                HStack {
-                    Button("Cancel") { showingAddItemSheet = false }
-                    Button("Add") {
-                        guard let selectedId = selectedButtonId else { return }
-                        
-                        if let buttonIndex = decodedCustomMenuButtons.firstIndex(where: { $0.id == selectedId }) {
-                            let newItem = CustomMenuItem(
-                                title: newItemTitle,
-                                command: newItemCommand,
-                                refreshInterval: newItemRefreshInterval > 0 ? newItemRefreshInterval : nil,
-                                outputFormat: newItemOutputFormat.isEmpty ? nil : newItemOutputFormat,
-                                showInMenuBar: newItemShowInMenuBar
-                            )
-                            decodedCustomMenuButtons[buttonIndex].items.append(newItem)
-                            saveCustomButtons()
-                        }
-                        showingAddItemSheet = false
-                    }
-                }
-            }
-            .padding()
-            .frame(width: 400)
+        .sheet(isPresented: $showingAddButtonSheet) { addButtonSheet }
+        .sheet(isPresented: $showingAddItemSheet) { addItemSheet }
+    }
+
+    private func syncFromBindings() {
+        self.localCPURefreshRate = self.CPURefreshRateBinding.wrappedValue
+        self.localCPUPctMode = self.cpupctModeBinding.wrappedValue
+        self.localCPUMBESelect = self.cpuMBESelectBinding.wrappedValue
+        self.localIPMBESelect = self.ipMBESelectBinding.wrappedValue
+        self.localBatteryMBESelect = self.batteryMBESelectBinding.wrappedValue
+        self.localMemoryMBESelect = self.memoryMBESelectBinding.wrappedValue
+        self.localPortsMBESelect = self.portsMBESelectBinding.wrappedValue
+        self.localCPUDisplayStyle = self.cpuDisplayStyle.wrappedValue
+        self.localMemoryDisplayMode = self.memoryDisplayModeBinding.wrappedValue
+        self.localBatteryMenuTitleOption = BatteryMenuTitleOption(rawValue: self.batteryMenuTitleOptionBinding.wrappedValue) ?? .batteryPercentage
+    }
+
+    private func updateMenuToggle(_ local: inout Bool, new: Bool, binding: Binding<Bool>) {
+        local = new
+        binding.wrappedValue = new
+        UserDefaults.standard.synchronize()
+        if !localCPUMBESelect && !localIPMBESelect && !localBatteryMBESelect && !localMemoryMBESelect && !localPortsMBESelect {
+            localCPUMBESelect = true
+            cpuMBESelectBinding.wrappedValue = true
         }
     }
-    
+
     private func editItem(_ item: CustomMenuItem) {
         for (_, button) in decodedCustomMenuButtons.enumerated() {
             if let itemIndex = button.items.firstIndex(where: { $0.id == item.id }) {
@@ -481,3 +591,4 @@ struct SettingsView: View {
         }
     }
 }
+
